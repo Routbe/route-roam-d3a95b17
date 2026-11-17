@@ -65,5 +65,5 @@ export const submitMyAge = createServerFn({ method: "POST" })
     const floor = ageFloorFromBirthDate(data.dob);
     (data as { dob?: string }).dob = undefined;
     const s = await import("./minor-safety.server");
-    return { outcome: await s.recordMyAge(context.userId, floor, data.parentEmail ?? null) };
+    return { outcome: await s.recordMyAge(context.userId, context.user.email ?? "", floor, data.parentEmail ?? null) };
   });

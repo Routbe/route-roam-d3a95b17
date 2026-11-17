@@ -146,7 +146,7 @@ export type MyAgeOutcome = "ok" | "already_set" | "dob_invalid" | "parent_requir
  * The post-sign-in age sheet. The date arrives only in this request and is turned into a whole-year
  * floor by ageFloorFromBirthDate (which wipes its byte copy); only the floor reaches Neon.
  */
-export async function recordMyAge(userId: string, ageFloor: number | null, parentEmail: string | null): Promise<MyAgeOutcome> {
+export async function recordMyAge(userId: string, ownEmail: string, ageFloor: number | null, parentEmail: string | null): Promise<MyAgeOutcome> {
   const { isAgeFloor } = await import("@/lib/age/age-floor");
   if (!isAgeFloor(ageFloor)) return "dob_invalid";
   const { hasSchemaFeature } = await import("@/lib/schema-features.server");
@@ -160,10 +160,7 @@ export async function recordMyAge(userId: string, ageFloor: number | null, paren
     (await sql`select public.rout_record_my_age_floor(${ageFloor}::smallint, ${parent}, ${hash}) as r`) as Row[]);
   const r = String(rows[0]?.["r"] ?? "unavailable");
   if (r === "ok") {
-    if (minor && token && parent) {
-      const own = (await sql`select email from public.users where id = ${userId}`) as Row[];
-      await mailParentConsent(String(own[0]?.["email"] ?? ""), parent, token);
-    }
+    if (minor && token && parent) await mailParentConsent(ownEmail, parent, token);
     return "ok";
   }
   if (r === "already_set" || r === "parent_required" || r === "parent_email_same") return r;
