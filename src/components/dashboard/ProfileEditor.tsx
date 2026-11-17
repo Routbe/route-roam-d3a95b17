@@ -82,7 +82,7 @@ import type { AliasProfileDTO } from "@/lib/alias-profile.functions";
 import type { StudioProfileDTO } from "@/lib/studio-profile.functions";
 import { VisitorPanel } from "@/components/dashboard/VisitorPanel";
 
-import { effectiveUrlStyle, styledProfilePath, type UrlStyle } from "@/lib/profile-url";
+import { effectiveUrlStyle, styledProfilePath, type UrlStyle, getProfileShareUrl } from "@/lib/profile-url";
 import {
   BADGE_NAME_FORMATS,
   BADGE_TYPES,
@@ -303,6 +303,13 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
   /** `profiles.username` van hetzelfde account (geverifieerde rootnaam). */
   const [rootUsername, setRootUsername] = useState<string | null>(null);
   const { space: identitySpace, select: selectIdentitySpace } = useIdentitySpace(verified);
+  // Canonical share link for every Copy/Share control in this editor.
+  const shareHandle = claimed ?? normalized;
+  const shareUrl = isWorkspace
+    ? getProfileShareUrl({ type: "workspace", slug: workspaceSlug ?? shareHandle })
+    : alias
+      ? getProfileShareUrl({ type: "alias", handle: shareHandle, urlStyle })
+      : getProfileShareUrl({ type: "root", handle: shareHandle, verified, urlStyle });
 
   const [legalName, setLegalName] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
@@ -1076,7 +1083,7 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
             {verified ? "Pro" : "Free"}
           </span>
           <ShareMenu
-            url={`https://rout.be${styledProfilePath(claimed ?? normalized, urlStyle)}`}
+            url={shareUrl}
             handle={claimed ?? ""}
             name={displayName}
             bio={tagline}
@@ -1137,7 +1144,7 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
           <ShareMenu
             iconOnly
             className="md:hidden"
-            url={`https://rout.be${styledProfilePath(claimed ?? normalized, urlStyle)}`}
+            url={shareUrl}
             handle={claimed ?? ""}
             name={displayName}
             bio={tagline}
