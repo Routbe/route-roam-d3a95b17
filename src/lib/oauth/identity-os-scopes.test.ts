@@ -3,6 +3,8 @@ import { AGE_GATE_SCOPES, ageGateMin, appNullifier, applyMinorFirewall, identity
 import { SUPPORTED_SCOPES, OPTIONAL_SCOPES, validateRequestedScopes } from "./scope-rules";
 
 const ROOT = "a".repeat(64);
+const KEY = new Uint8Array(32).fill(7);
+const KEY2 = new Uint8Array(32).fill(9);
 const none = { legalIdentity: false, realHuman: false, ageVector: null, rootNullifier: null, legalName: null };
 
 describe("age gate scopes", () => {
@@ -24,24 +26,32 @@ describe("age gate scopes", () => {
 
 describe("appNullifier", () => {
   it("is stable per app and differs across apps", () => {
-    expect(appNullifier(ROOT, "app-1")).toBe(appNullifier(ROOT, "app-1"));
-    expect(appNullifier(ROOT, "app-1")).not.toBe(appNullifier(ROOT, "app-2"));
-    expect(appNullifier(ROOT, "app-1")).toMatch(/^[0-9a-f]{64}$/);
-    expect(appNullifier(ROOT, "app-1")).not.toContain(ROOT);
+    expect(appNullifier(ROOT, "app-1", KEY)).toBe(appNullifier(ROOT, "app-1", KEY));
+    expect(appNullifier(ROOT, "app-1", KEY)).not.toBe(appNullifier(ROOT, "app-2", KEY));
+    expect(appNullifier(ROOT, "app-1", KEY)).toMatch(/^[0-9a-f]{64}$/);
+    expect(appNullifier(ROOT, "app-1", KEY)).not.toContain(ROOT);
+  });
+  it("cannot be reproduced without the server key", () => {
+    expect(appNullifier(ROOT, "app-1", KEY)).not.toBe(appNullifier(ROOT, "app-1", KEY2));
   });
   it("refuses malformed input", () => {
-    expect(() => appNullifier("BEL:PN:1", "app")).toThrow();
-    expect(() => appNullifier(ROOT, "")).toThrow();
+    expect(() => appNullifier("BEL:PN:1", "app", KEY)).toThrow();
+    expect(() => appNullifier(ROOT, "", KEY)).toThrow();
+    expect(() => appNullifier(ROOT, "app", new Uint8Array(16))).toThrow();
   });
 });
 
 describe("identityOsClaims", () => {
   it("answers each granted scope and nothing else", () => {
     const r = identityOsClaims(["openid", "sybil_proof", "age_gate:18", "real_human", "legal_identity"], "app-1",
-      { legalIdentity: true, realHuman: false, ageVector: 127, rootNullifier: ROOT, legalName: null });
-    expect(r.claims).toEqual({ sybil_proof: true, app_nullifier: appNullifier(ROOT, "app-1"), age_verified: true, min_age: 18, is_real_human: false, has_legal_identity: true });
+      { legalIdentity: true, realHuman: false, ageVector: 127, rootNullifier: ROOT, legalName: null }, KEY);
+    expect(r.claims).toEqual({ sybil_proof: true, app_nullifier: appNullifier(ROOT, "app-1", KEY), age_verified: true, min_age: 18, is_real_human: false, has_legal_identity: true });
     expect(r.disclosed.sort()).toEqual(["age_gate:18", "legal_identity", "real_human", "sybil_proof"]);
     expect(identityOsClaims(["openid", "profile"], "app-1", none)).toEqual({ claims: {}, disclosed: [] });
+  });
+  it("issues no nullifier without the server key", () => {
+    const r = identityOsClaims(["sybil_proof"], "app-1", { ...none, rootNullifier: ROOT });
+    expect(r.claims).toEqual({ sybil_proof: false });
   });
   it("fails closed without an attestation", () => {
     const r = identityOsClaims(["sybil_proof", "age_gate:13", "legal_identity", "real_human"], "app-1", none);
