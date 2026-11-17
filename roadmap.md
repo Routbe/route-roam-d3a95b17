@@ -438,7 +438,9 @@
 - [x] age_gate?min_age=N with minimal { age_verified, min_age } claims
 - [x] Minor firewall (< 18) on userinfo
 - [x] Touch fallback for careful typing
-- [ ] 0290 on Neon (GO given; owner runs migration-rollout.ts --apply with MIGRATION_URL)
-- [ ] Unified auth card (needs decision: /secure/* isolation)
+- [x] 0290 on Neon (applied 2026-11-17, checksum verified)
+- [x] ECVRF (RFC 9381) app nullifiers
+- [x] Minor firewall at token issuance
+- [x] /login unified card with social, passkey and password fold-out
 - [ ] Post-OAuth age modal (needs decision: no DOB storage)
 - [ ] PAdES-LTA via CSC (waits for QTSP choice)
