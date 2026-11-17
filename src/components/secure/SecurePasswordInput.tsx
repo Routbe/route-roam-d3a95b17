@@ -5,6 +5,7 @@ import type { PasswordSource } from "@/lib/crypto-enclave/protocol";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { detectTouch, effectivePasswordMode } from "@/lib/secure/touch-input";
 
 export type PasswordInputMode = "normal" | "paranoid";
 
@@ -48,8 +49,12 @@ const isOneCharacter = (key: string) => Array.from(key).length === 1;
  *   browser still creates a short `event.key` string per key, which nobody can
  *   erase; paste and password managers do not work here.
  */
-export const SecurePasswordInput = forwardRef<SecurePasswordHandle, Props>(function SecurePasswordInput({ id, label, mode, autoComplete, onEnter, describedBy }, ref) {
+export const SecurePasswordInput = forwardRef<SecurePasswordHandle, Props>(function SecurePasswordInput({ id, label, mode: requestedMode, autoComplete, onEnter, describedBy }, ref) {
   const { t } = useTranslation();
+  // Touch devices get the native field: a key-capture box opens no on-screen keyboard.
+  const [touch, setTouch] = useState(false);
+  useEffect(() => setTouch(detectTouch()), []);
+  const mode = effectivePasswordMode(requestedMode, touch);
   const input = useRef<HTMLInputElement>(null);
   const slotRef = useRef<string | null>(null);
   const [dots, setDots] = useState(0);
@@ -158,7 +163,10 @@ export const SecurePasswordInput = forwardRef<SecurePasswordHandle, Props>(funct
           ref={input}
           id={id}
           type="password"
-          autoComplete={autoComplete}
+          autoComplete={touch && requestedMode === "paranoid" ? "off" : autoComplete}
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
           maxLength={256}
           required
           aria-describedby={describedBy}
