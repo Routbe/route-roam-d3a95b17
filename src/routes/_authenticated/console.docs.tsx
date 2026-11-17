@@ -32,7 +32,7 @@ const TOOLS: { id: PromptTool; label: string }[] = [
 const SCOPE_TEXT: Record<PromptScope, string> = {
   sybil_proof: "Eén mens = één account in je app (app_nullifier).",
   real_human: "Enkel is_real_human, na een zero-knowledge-bewijs.",
-  age_gate: "age_over_N zonder geboortedatum (13 tot 21).",
+  age_gate: "age_gate?min_age=N: enkel { age_verified, min_age }, zonder geboortedatum (13 tot 21).",
   legal_identity: "has_legal_identity, naam alleen met expliciete toestemming.",
 };
 
