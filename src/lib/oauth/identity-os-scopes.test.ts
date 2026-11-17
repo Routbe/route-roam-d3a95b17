@@ -45,12 +45,12 @@ describe("identityOsClaims", () => {
   });
   it("fails closed without an attestation", () => {
     const r = identityOsClaims(["sybil_proof", "age_gate:13", "legal_identity", "real_human"], "app-1", none);
-    expect(r.claims).toEqual({ sybil_proof: false, age_verified: false, min_age: 13, is_real_human: false });
+    expect(r.claims).toEqual({ sybil_proof: false, age_verified: false, min_age: 13, has_legal_identity: false, is_real_human: false });
   });
   it("releases a legal name only with a legal identity", () => {
     const name = { first_name: "Ann", last_name: "Peeters", full_legal_name: "Ann Peeters" };
-    expect(identityOsClaims(["legal_identity"], "a", { ...none, ageVector: 127, legalName: name }).claims).toEqual({ has_legal_identity: false });
-    expect(identityOsClaims(["legal_identity"], "a", { ...none, ageVector: 127, legalIdentity: true, legalName: name }).claims).toEqual({ has_legal_identity: true, ...name });
+    expect(identityOsClaims(["legal_identity"], "a", { ...none, legalName: name }).claims).toEqual({ has_legal_identity: false });
+    expect(identityOsClaims(["legal_identity"], "a", { ...none, legalIdentity: true, legalName: name }).claims).toEqual({ has_legal_identity: true, ...name });
   });
 });
 
@@ -79,8 +79,8 @@ describe("minor firewall (< 18)", () => {
   it("strips every personal-data scope for a 16-year-old", () => {
     expect(applyMinorFirewall(asked, 0b1111)).toEqual(["openid", "sybil_proof", "real_human", "age_gate"]);
   });
-  it("strips them too when the age is unknown", () => {
-    expect(applyMinorFirewall(asked, null)).not.toContain("legal_identity");
+  it("strips them for a 13-year-old (only the 13 bit set)", () => {
+    expect(applyMinorFirewall(asked, 0b1)).not.toContain("legal_identity");
   });
   it("keeps the request for an adult", () => {
     expect(applyMinorFirewall(asked, 127)).toEqual(asked);

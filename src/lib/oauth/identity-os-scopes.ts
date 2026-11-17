@@ -41,12 +41,17 @@ export function requestedMinAge(scopes: readonly string[]): number | null {
 }
 
 /**
- * Minor firewall: when the member is not proven 18+, every personal-data scope is removed,
+ * Minor firewall: when the member's attested age is below 18, every personal-data scope is removed,
  * even when the app asked for it or the member ticked it. Only zero-knowledge scopes remain.
  */
 export function applyMinorFirewall(granted: readonly string[], ageVector: number | null): string[] {
-  if (ageGatePasses(ageVector, 18)) return [...granted];
+  if (!isKnownMinor(ageVector)) return [...granted];
   return granted.filter((s) => !MINOR_BLOCKED_SCOPES.includes(s));
+}
+
+/** True when an attested age exists and it is below 18. No attestation means no age is known. */
+export function isKnownMinor(ageVector: number | null): boolean {
+  return ageVector !== null && ageVector !== undefined && !ageGatePasses(ageVector, 18);
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -90,7 +95,7 @@ export function identityOsClaims(granted: readonly string[], clientId: string, i
     claims["min_age"] = minAge;
     for (const scope of granted) if (ageGateMin(scope) !== null) disclosed.push(scope);
   }
-  if (granted.includes("legal_identity") && ageGatePasses(input.ageVector, 18)) {
+  if (granted.includes("legal_identity") && !isKnownMinor(input.ageVector)) {
     claims["has_legal_identity"] = input.legalIdentity === true;
     if (input.legalIdentity && input.legalName?.full_legal_name) Object.assign(claims, input.legalName);
     disclosed.push("legal_identity");

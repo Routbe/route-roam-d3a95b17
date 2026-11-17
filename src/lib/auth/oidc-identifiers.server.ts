@@ -65,6 +65,11 @@ export async function generateUserInfoResponse(
   const { identityClaims, getClientByClientId, isTrustedKycPartner } = await import("@/lib/oauth/provider.server");
   const client = await getClientByClientId(clientId);
   const id = await identityOf(userId);
+  // Minor firewall: a member whose attested age is below 18 releases no personal data at all,
+  // whatever the app asked or the consent said; only zero-knowledge scopes remain.
+  const { applyMinorFirewall } = await import("@/lib/oauth/identity-os-scopes");
+  const { readIdentityOsInput: readAge } = await import("@/lib/oauth/identity-os.server");
+  grantedScopes = applyMinorFirewall(grantedScopes, (await readAge(userId, null)).ageVector);
   if (grantedScopes.includes("identity:national_id")) {
     const { STRICT_ACR } = await import("@/lib/oauth/step-up");
     const d = nationalIdDecision({ trustedPartner: await isTrustedKycPartner(clientId), tier: id.tier, stepUp: opts.acr === STRICT_ACR });
