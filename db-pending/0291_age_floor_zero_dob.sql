@@ -177,12 +177,14 @@ create function public.rout_my_age_floor()
  stable security definer
  set search_path = pg_catalog, pg_temp
 as $function$
-  select least(21, greatest(
-    (select u.age_floor + pg_catalog.date_part('year',
-              pg_catalog.age(current_date::timestamp, u.age_floor_at::timestamp))::integer
-       from public.users u where u.id = public.rout_current_user_id()),
-    (select pg_catalog.max(n.age_floor)::integer from public.verified_identity_nullifiers n
-      where n.user_id = public.rout_current_user_id())))::smallint
+  -- least() and greatest() skip nulls, so the cap is applied only to a known age.
+  select case when s.g is null then null else least(21, s.g)::smallint end
+    from (select greatest(
+      (select u.age_floor + pg_catalog.date_part('year',
+                pg_catalog.age(current_date::timestamp, u.age_floor_at::timestamp))::integer
+         from public.users u where u.id = public.rout_current_user_id()),
+      (select pg_catalog.max(n.age_floor)::integer from public.verified_identity_nullifiers n
+        where n.user_id = public.rout_current_user_id())) as g) s
 $function$;
 
 revoke all on function public.rout_record_signup_age_floor(text, smallint, text, text) from public, rout_app;
