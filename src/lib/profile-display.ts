@@ -273,7 +273,7 @@ export interface ProfileDisplayPrefs extends ProfileDesignPrefs {}
 export const DEFAULT_DISPLAY_PREFS: ProfileDisplayPrefs = {
   identityMode: "legal",
   badgeVisible: true,
-  humanBadgeVisible: true,
+  humanBadgeVisible: false,
   supporterBadgeVisible: true,
   badgeShowcaseVisible: true,
   publicProfile: true,
@@ -479,7 +479,7 @@ export function parseDisplayPrefs(raw: unknown): ProfileDisplayPrefs {
   return {
     identityMode: oneOf(r["identityMode"], ["legal", "private"] as const, "legal"),
     badgeVisible: r["badgeVisible"] === undefined ? true : Boolean(r["badgeVisible"]),
-    humanBadgeVisible: r["humanBadgeVisible"] === undefined ? true : Boolean(r["humanBadgeVisible"]),
+    humanBadgeVisible: r["humanBadgeVisible"] === true,
     supporterBadgeVisible: r["supporterBadgeVisible"] === undefined ? true : Boolean(r["supporterBadgeVisible"]),
     badgeShowcaseVisible:
       r["badgeShowcaseVisible"] === undefined ? true : Boolean(r["badgeShowcaseVisible"]),

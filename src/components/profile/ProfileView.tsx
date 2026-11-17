@@ -1,3 +1,4 @@
+import { showsIdentityBadge } from "@/lib/profile/identity-badge-visibility";
 import { clampWidgetRadius } from "@/lib/qa/design";
 import { titleTypographyClass, titleTypographyStyle } from "@/lib/title-typography";
 import { runCustomVisitEffect, normalizeVisitCustom } from "@/lib/visit-effect-custom";
@@ -277,11 +278,17 @@ export function ProfileView({
   // db/0288). Een KYC-attestatie, betaling of Pro geeft het nooit.
   const zkHuman = profile.real_human_verified === true;
   const kycAttested = profile.legal_identity_verified === true;
-  const showBadge = free
-    ? Boolean(profile.human_linked) && prefs.humanBadgeVisible
-    : // Blauw "KYC Attested"-schild: uitsluitend na een KYC-attestatie (Didit/eIDAS). Het groene
-      // schild op de rootpagina vraagt een eigen zero-knowledge-bewijs.
-      prefs.badgeVisible && prefs.badgeType !== "none" && (kycAttested || (zkHuman && prefs.badgeType === "human" && !profile.is_business && !profile.is_influencer));
+  const showBadge = showsIdentityBadge({
+    space: free ? "alias" : "root",
+    kycAttested,
+    zkHuman,
+    humanLinked: Boolean(profile.human_linked),
+    badgeVisible: prefs.badgeVisible,
+    badgeType: prefs.badgeType,
+    isBusiness: Boolean(profile.is_business),
+    isInfluencer: Boolean(profile.is_influencer),
+    aliasBadgeVisible: prefs.humanBadgeVisible,
+  });
   // Supporter/Pro: aparte, discrete kroon — los van identiteit, alleen op de rootpagina.
   const showSupporter = !free && !publicPath?.startsWith("/w/") && showsSupporterCrown({ isPro: profile.is_pro === true, supporterBadgeVisible: prefs.supporterBadgeVisible });
   /**
@@ -303,7 +310,9 @@ export function ProfileView({
             ? "verified"
             : prefs.badgeType === "human" && !zkHuman
               ? "verified"
-              : prefs.badgeType;
+              : prefs.badgeType === "none" && kycAttested
+                ? "verified"
+                : prefs.badgeType;
   const hasPro = profile.is_pro ?? Boolean(profile.verified);
   const showWatermark =
     shouldShowWatermark(hasPro, prefs) &&

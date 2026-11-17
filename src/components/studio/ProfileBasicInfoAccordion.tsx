@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { AvatarUpload } from "@/components/settings/AvatarUpload";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { styledProfilePath, type UrlStyle } from "@/lib/profile-url";
+import { getProfileShareUrl, styledProfilePath, type UrlStyle } from "@/lib/profile-url";
 import { type ProfileDisplayPrefs } from "@/lib/profile-display";
 import { type ProfileBlock } from "@/lib/profile";
 import { cn } from "@/lib/utils";
@@ -249,10 +249,17 @@ export function ProfileBasicInfoAccordion({
                 <button
                   type="button"
                   onClick={() => {
-                    void navigator.clipboard.writeText(
-                      `https://rout.be${styledProfilePath(normalized || "handle", urlStyle)}`,
-                    );
-                    toast.success(t("studio.basic.copied"));
+                    const h = normalized || "handle";
+                    const url =
+                      variant === "workspace"
+                        ? getProfileShareUrl({ type: "workspace", slug: h })
+                        : variant === "alias"
+                          ? getProfileShareUrl({ type: "alias", handle: h, urlStyle })
+                          : getProfileShareUrl({ type: "root", handle: h, verified: cta === "verified", urlStyle });
+                    void navigator.clipboard
+                      .writeText(url)
+                      .then(() => toast.success(t("studio.basic.copied")))
+                      .catch(() => toast.error(t("studio.basic.copyLink")));
                   }}
                   className="shrink-0 rounded-lg border border-border px-2 py-1 text-[11px] font-medium hover:bg-muted"
                 >

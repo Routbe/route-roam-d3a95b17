@@ -4,7 +4,7 @@
  * rules an app must keep (unique app_nullifier, false means "not proven", no fallback login).
  */
 import { DISCOVERY_URL, ROUT_ISSUER } from "./integration-templates";
-import { AGE_GATE_SCOPES } from "./identity-os-scopes";
+import { AGE_GATE_PARAM_SCOPES } from "./identity-os-scopes";
 
 export type PromptTool = "lovable" | "cursor" | "chatgpt";
 export type PromptScope = "sybil_proof" | "real_human" | "legal_identity" | "age_gate";
@@ -18,7 +18,7 @@ const TOOL_LINE: Record<PromptTool, string> = {
 
 export function buildIdentityOsPrompt(input: { tool: PromptTool; scopes: readonly PromptScope[]; ageMin?: number; clientId?: string }): string {
   const age = input.scopes.includes("age_gate") ? input.ageMin ?? 18 : null;
-  const ageScope = age !== null && AGE_GATE_SCOPES.includes(`age_gate:${age}`) ? `age_gate:${age}` : null;
+  const ageScope = age !== null && AGE_GATE_PARAM_SCOPES.includes(`age_gate?min_age=${age}`) ? `age_gate?min_age=${age}` : null;
   const scopes = ["openid", ...input.scopes.filter((s) => s !== "age_gate"), ...(ageScope ? [ageScope] : [])];
   const clientId = input.clientId?.trim() || "<YOUR_ROUT_CLIENT_ID>";
   const lines: string[] = [
@@ -44,7 +44,7 @@ export function buildIdentityOsPrompt(input: { tool: PromptTool; scopes: readonl
     lines.push("- `real_human` → `is_real_human` (boolean), true only after a zero-knowledge humanity proof. Treat false as \"not proven\", not as \"bot\".");
   }
   if (ageScope) {
-    lines.push(`- \`${ageScope}\` → \`age_over_${age}\` (boolean). No date of birth is ever sent. Block the age-restricted feature unless it is true.`);
+    lines.push(`- \`${ageScope}\` → \`{ "age_verified": boolean, "min_age": ${age} }\`. No date of birth or actual age is ever sent. Block the age-restricted feature unless age_verified is true.`);
   }
   if (input.scopes.includes("legal_identity")) {
     lines.push(

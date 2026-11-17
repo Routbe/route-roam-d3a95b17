@@ -98,16 +98,17 @@ function ScopesPage() {
           ))}
         </ul>
       </ConsoleCard>
-      <ConsoleCard title="age_gate" description="Leeftijdscontrole zonder geboortedatum: je app krijgt enkel age_over_N (true/false) uit een KYC-verificatie. Kies één grens.">
+      <ConsoleCard title="age_gate" description="Leeftijdscontrole zonder geboortedatum: je app vraagt age_gate?min_age=N en krijgt enkel { age_verified, min_age } uit een KYC-verificatie. Kies één grens.">
         <label className="flex items-center gap-3 text-sm">
           <span className="flex-1">Minimumleeftijd</span>
           <select
             className="min-h-11 rounded-md border border-input bg-background px-3 text-sm"
             disabled={saving}
-            value={app.scopes.find((x) => x.startsWith("age_gate:"))?.slice(9) ?? ""}
+            value={app.scopes.find((x) => x.startsWith("age_gate:"))?.slice(9) ?? app.scopes.find((x) => x.startsWith("age_gate?min_age="))?.slice(17) ?? ""}
             onChange={(e) => {
-              const rest = app.scopes.filter((x) => !x.startsWith("age_gate:"));
-              persist({ scopes: e.target.value ? [...rest, `age_gate:${e.target.value}`] : rest });
+              const rest = app.scopes.filter((x) => !x.startsWith("age_gate:") && !x.startsWith("age_gate?"));
+              // Register both notations so old (age_gate:N) and new (age_gate?min_age=N) requests pass.
+              persist({ scopes: e.target.value ? [...rest, `age_gate:${e.target.value}`, `age_gate?min_age=${e.target.value}`] : rest });
             }}
           >
             <option value="">Uit</option>

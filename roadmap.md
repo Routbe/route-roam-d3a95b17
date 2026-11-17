@@ -431,3 +431,14 @@
 - [ ] PAdES-LTA via CSC API — wacht op keuze QTSP + credentials
 - [ ] getProfileShareUrl + Studio "Kopieer link"/"Delen"
 - [ ] Badges: alleen ontgrendelde publiek, blauw schild verplicht op hoofdprofiel, alias-schakelaar, heraldiek alleen in BadgeEmblem
+
+## Identity OS follow-up (2026-11-17)
+- [x] getProfileShareUrl + Studio/dashboard Copy/Share wired
+- [x] Blue shield mandatory on KYC root; alias badge toggle default off
+- [x] age_gate?min_age=N with minimal { age_verified, min_age } claims
+- [x] Minor firewall (< 18) on userinfo
+- [x] Touch fallback for careful typing
+- [ ] 0290 on Neon (GO given; owner runs migration-rollout.ts --apply with MIGRATION_URL)
+- [ ] Unified auth card (needs decision: /secure/* isolation)
+- [ ] Post-OAuth age modal (needs decision: no DOB storage)
+- [ ] PAdES-LTA via CSC (waits for QTSP choice)

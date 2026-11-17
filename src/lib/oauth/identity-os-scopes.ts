@@ -14,14 +14,44 @@ import { blake3 } from "@noble/hashes/blake3.js";
 import { ageGatePasses, AGE_GATE_MAX, AGE_GATE_MIN } from "@/lib/kyc/age-vector";
 
 export const AGE_GATE_SCOPES = Array.from({ length: AGE_GATE_MAX - AGE_GATE_MIN + 1 }, (_, i) => `age_gate:${AGE_GATE_MIN + i}`);
-export const IDENTITY_OS_SCOPES: readonly string[] = ["sybil_proof", "real_human", "legal_identity", ...AGE_GATE_SCOPES];
+/** Dynamic notation `age_gate?min_age=N` (N 13..21); bare `age_gate` means 18. */
+export const AGE_GATE_DEFAULT = 18;
+export const AGE_GATE_PARAM_SCOPES = Array.from({ length: AGE_GATE_MAX - AGE_GATE_MIN + 1 }, (_, i) => `age_gate?min_age=${AGE_GATE_MIN + i}`);
+export const IDENTITY_OS_SCOPES: readonly string[] = ["sybil_proof", "real_human", "legal_identity", "age_gate", ...AGE_GATE_SCOPES, ...AGE_GATE_PARAM_SCOPES];
+/** Scopes that release personal data; never released for a member under 18. */
+export const MINOR_BLOCKED_SCOPES: readonly string[] = ["legal_identity", "identity:legal_name", "identity:national_id", "email", "phone", "address", "profile"];
 
-/** The minimum age of an age_gate:N scope, or null for any other string. */
+/** The minimum age of an age_gate scope (`age_gate`, `age_gate:N`, `age_gate?min_age=N`), or null. */
 export function ageGateMin(scope: string): number | null {
-  const m = /^age_gate:(\d{2})$/.exec(scope);
+  if (scope === "age_gate") return AGE_GATE_DEFAULT;
+  const m = /^age_gate(?::|\?min_age=)(\d{2})$/.exec(scope);
   if (!m) return null;
   const n = Number(m[1]);
   return n >= AGE_GATE_MIN && n <= AGE_GATE_MAX ? n : null;
+}
+
+/** The strictest requested age gate, or null when none was requested. */
+export function requestedMinAge(scopes: readonly string[]): number | null {
+  let min: number | null = null;
+  for (const s of scopes) {
+    const n = ageGateMin(s);
+    if (n !== null && (min === null || n > min)) min = n;
+  }
+  return min;
+}
+
+/**
+ * Minor firewall: when the member's attested age is below 18, every personal-data scope is removed,
+ * even when the app asked for it or the member ticked it. Only zero-knowledge scopes remain.
+ */
+export function applyMinorFirewall(granted: readonly string[], ageVector: number | null): string[] {
+  if (!isKnownMinor(ageVector)) return [...granted];
+  return granted.filter((s) => !MINOR_BLOCKED_SCOPES.includes(s));
+}
+
+/** True when an attested age exists and it is below 18. No attestation means no age is known. */
+export function isKnownMinor(ageVector: number | null): boolean {
+  return ageVector !== null && ageVector !== undefined && !ageGatePasses(ageVector, 18);
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -58,13 +88,14 @@ export function identityOsClaims(granted: readonly string[], clientId: string, i
     claims["is_real_human"] = input.realHuman === true;
     disclosed.push("real_human");
   }
-  for (const scope of granted) {
-    const min = ageGateMin(scope);
-    if (min === null) continue;
-    claims[`age_over_${min}`] = ageGatePasses(input.ageVector, min);
-    disclosed.push(scope);
+  const minAge = requestedMinAge(granted);
+  if (minAge !== null) {
+    // Strictly minimal: only whether the threshold is met and which threshold was asked.
+    claims["age_verified"] = ageGatePasses(input.ageVector, minAge);
+    claims["min_age"] = minAge;
+    for (const scope of granted) if (ageGateMin(scope) !== null) disclosed.push(scope);
   }
-  if (granted.includes("legal_identity")) {
+  if (granted.includes("legal_identity") && !isKnownMinor(input.ageVector)) {
     claims["has_legal_identity"] = input.legalIdentity === true;
     if (input.legalIdentity && input.legalName?.full_legal_name) Object.assign(claims, input.legalName);
     disclosed.push("legal_identity");
