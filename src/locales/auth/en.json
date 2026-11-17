@@ -382,5 +382,13 @@
   "auth.scope.sybilProof": "An anonymous proof that you are one real human, valid only at {{app}} — apps cannot recognise you across each other",
   "auth.scope.realHuman": "Only whether a zero-knowledge proof confirmed you as a real human (yes/no)",
   "auth.scope.ageGate": "Only whether you are at least {{age}} (yes/no), never your date of birth",
-  "auth.scope.legalIdentity": "Whether your legal identity is verified, and your legal name if ROUT holds it — only if you tick this"
+  "auth.scope.legalIdentity": "Whether your legal identity is verified, and your legal name if ROUT holds it — only if you tick this",
+  "auth.age.title": "How old are you?",
+  "auth.age.body": "To protect you as the law requires (GDPR Art. 8), we need your age. We only ask once.",
+  "auth.age.privacy": "We never store your date of birth. The server only works out your age in whole years and forgets the date right away.",
+  "auth.age.cta": "Confirm",
+  "auth.age.saving": "Saving…",
+  "auth.age.saved": "Thanks, your age has been saved.",
+  "auth.age.savedMinor": "Thanks. We emailed your parent to ask for consent.",
+  "auth.age.failed": "That didn't work. Please try again in a moment."
 }
