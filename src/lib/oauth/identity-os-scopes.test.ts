@@ -1,0 +1,55 @@
+import { describe, expect, it } from "vitest";
+import { AGE_GATE_SCOPES, ageGateMin, appNullifier, identityOsClaims } from "./identity-os-scopes";
+import { SUPPORTED_SCOPES, OPTIONAL_SCOPES, validateRequestedScopes } from "./scope-rules";
+
+const ROOT = "a".repeat(64);
+const none = { legalIdentity: false, realHuman: false, ageVector: null, rootNullifier: null, legalName: null };
+
+describe("age gate scopes", () => {
+  it("cover exactly 13..21", () => {
+    expect(AGE_GATE_SCOPES[0]).toBe("age_gate:13");
+    expect(AGE_GATE_SCOPES.at(-1)).toBe("age_gate:21");
+    expect(AGE_GATE_SCOPES).toHaveLength(9);
+    expect(ageGateMin("age_gate:18")).toBe(18);
+    for (const s of ["age_gate:12", "age_gate:22", "age_gate:1", "age_gate", "age_gate:18x"]) expect(ageGateMin(s)).toBeNull();
+  });
+  it("are issued and switchable on the consent screen", () => {
+    for (const s of ["sybil_proof", "real_human", "legal_identity", "age_gate:18"]) {
+      expect((SUPPORTED_SCOPES as readonly string[]).includes(s)).toBe(true);
+      expect(OPTIONAL_SCOPES.includes(s)).toBe(true);
+    }
+    expect(validateRequestedScopes(["openid", "age_gate:22"], ["openid", "age_gate:22"])).toEqual({ ok: false, unknown: "age_gate:22" });
+  });
+});
+
+describe("appNullifier", () => {
+  it("is stable per app and differs across apps", () => {
+    expect(appNullifier(ROOT, "app-1")).toBe(appNullifier(ROOT, "app-1"));
+    expect(appNullifier(ROOT, "app-1")).not.toBe(appNullifier(ROOT, "app-2"));
+    expect(appNullifier(ROOT, "app-1")).toMatch(/^[0-9a-f]{64}$/);
+    expect(appNullifier(ROOT, "app-1")).not.toContain(ROOT);
+  });
+  it("refuses malformed input", () => {
+    expect(() => appNullifier("BEL:PN:1", "app")).toThrow();
+    expect(() => appNullifier(ROOT, "")).toThrow();
+  });
+});
+
+describe("identityOsClaims", () => {
+  it("answers each granted scope and nothing else", () => {
+    const r = identityOsClaims(["openid", "sybil_proof", "age_gate:18", "real_human", "legal_identity"], "app-1",
+      { legalIdentity: true, realHuman: false, ageVector: 127, rootNullifier: ROOT, legalName: null });
+    expect(r.claims).toEqual({ sybil_proof: true, app_nullifier: appNullifier(ROOT, "app-1"), age_over_18: true, is_real_human: false, has_legal_identity: true });
+    expect(r.disclosed.sort()).toEqual(["age_gate:18", "legal_identity", "real_human", "sybil_proof"]);
+    expect(identityOsClaims(["openid", "profile"], "app-1", none)).toEqual({ claims: {}, disclosed: [] });
+  });
+  it("fails closed without an attestation", () => {
+    const r = identityOsClaims(["sybil_proof", "age_gate:13", "legal_identity", "real_human"], "app-1", none);
+    expect(r.claims).toEqual({ sybil_proof: false, age_over_13: false, has_legal_identity: false, is_real_human: false });
+  });
+  it("releases a legal name only with a legal identity", () => {
+    const name = { first_name: "Ann", last_name: "Peeters", full_legal_name: "Ann Peeters" };
+    expect(identityOsClaims(["legal_identity"], "a", { ...none, legalName: name }).claims).toEqual({ has_legal_identity: false });
+    expect(identityOsClaims(["legal_identity"], "a", { ...none, legalIdentity: true, legalName: name }).claims).toEqual({ has_legal_identity: true, ...name });
+  });
+});
