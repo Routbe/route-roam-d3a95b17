@@ -110,6 +110,8 @@
 
 /* Reference brand tiles: artwork is bundled, not fetched from a CDN. */
 :root {
+  /* Supporter crown micro-badge on profile headers (independent of the member's canvas). */
+  --supporter-gold: oklch(0.78 0.16 80);
   --payment-paper: oklch(1 0 0);
   --payment-ink: oklch(0.15 0 0);
   --payment-venmo: oklch(0.64 0.2 250);

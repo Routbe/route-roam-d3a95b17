@@ -542,14 +542,14 @@ export function ProfileView({
               backdrop={prefs.badgeBackdrop}
               backdropColor={prefs.badgeBackdropColor}
               verifiedAt={profile.verified_at ?? null}
-              size={earlyBeliever ? "md" : "sm"}
+              size="sm"
               cardBg={t.card}
               cardBorder={t.border}
               textColor={t.text}
               mutedColor={t.muted}
             />
           )}
-          {showSupporter && <SupporterCrownBadge color={t.muted} />}
+          {showSupporter && <SupporterCrownBadge color="var(--supporter-gold)" />}
           {earlyBeliever && (
             <PioneerBadge
               badgeId={profile.early_believer_id ?? null}

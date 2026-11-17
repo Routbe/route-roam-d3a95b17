@@ -57,10 +57,10 @@ export function PioneerBadge({ badgeId, grantedAt, fallbackDate, locale, theme, 
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Early Believer & Pioneer Member"
-          className="inline-flex items-center transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+          className="tap-wide inline-flex items-center transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
           style={{ color: theme.text }}
         >
-          <PioneerEmblem className="h-6 w-6" />
+          <PioneerEmblem className="h-[1.125rem] w-[1.125rem]" />
         </button>
       ) : (
         <button
