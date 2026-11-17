@@ -21,7 +21,7 @@ export const AGE_GATE_DEFAULT = 18;
 export const AGE_GATE_PARAM_SCOPES = Array.from({ length: AGE_GATE_MAX - AGE_GATE_MIN + 1 }, (_, i) => `age_gate?min_age=${AGE_GATE_MIN + i}`);
 export const IDENTITY_OS_SCOPES: readonly string[] = ["sybil_proof", "real_human", "legal_identity", "age_gate", ...AGE_GATE_SCOPES, ...AGE_GATE_PARAM_SCOPES];
 /** Scopes that release personal data; never released for a member under 18. */
-export const MINOR_BLOCKED_SCOPES: readonly string[] = ["legal_identity", "identity:legal_name", "identity:national_id", "email", "phone", "address", "profile"];
+export const MINOR_BLOCKED_SCOPES: readonly string[] = ["legal_identity", "identity:legal_name", "identity:national_id", "email", "phone", "address", "profile", "profile:read"];
 
 /** The minimum age of an age_gate scope (`age_gate`, `age_gate:N`, `age_gate?min_age=N`), or null. */
 export function ageGateMin(scope: string): number | null {
