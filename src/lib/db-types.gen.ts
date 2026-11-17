@@ -2030,6 +2030,22 @@ export interface PublicShowcaseProfilesRow {
   "position": number;
 }
 
+export interface PublicSignRequestsRow {
+  "id": string;
+  "owner_id": string;
+  "ciphertext": Uint8Array;
+  "ciphertext_sha256": string;
+  "min_read_seconds": number;
+  "status": string;
+  "created_at": string | Date;
+  "expires_at": string | Date;
+  "signer_id": string | null;
+  "signer_binding": string | null;
+  "signed_digest": string | null;
+  "signed_ciphertext": Uint8Array | null;
+  "signed_at": string | Date | null;
+}
+
 export interface PublicSigninThrottleRow {
   "identity_hash": string;
   "failures": number;
@@ -2460,6 +2476,7 @@ export interface PublicVerifiedIdentityNullifiersRow {
   "jurisdiction": string | null;
   "evidence": string;
   "attested_at": string | Date;
+  "age_floor": number | null;
 }
 
 export interface PublicWalletPassesRow {
@@ -2894,6 +2911,7 @@ export interface DbTables {
   "public.shadow_mutes": PublicShadowMutesRow;
   "public.shared_files": PublicSharedFilesRow;
   "public.showcase_profiles": PublicShowcaseProfilesRow;
+  "public.sign_requests": PublicSignRequestsRow;
   "public.signin_throttle": PublicSigninThrottleRow;
   "public.social_block_settings": PublicSocialBlockSettingsRow;
   "public.social_follow_links": PublicSocialFollowLinksRow;
