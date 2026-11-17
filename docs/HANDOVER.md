@@ -978,3 +978,12 @@ On the owner's decision the held-back booking ledger is now `db-pending/0284_boo
 - **ROUT Sign phase 1** (`src/lib/sign`, rules in its AGENTS.md): `/sign` (members) cleans and seals a PDF in the browser and returns a link with the key after `#`; `/sign/<id>` opens it in the crypto worker, shows only the sanitized pages as canvases, enables the button after the full scroll and the read time, and records the signature through Sudo Mode. It is explicitly not a PAdES or qualified signature. Until 0290 is live, ROUT Sign answers "not available yet".
 - **Open**: the read time is enforced in the browser only; PAdES-LTA via a QTSP; live passkey and Neon checks need `DATABASE_URL` in an environment.
 
+
+## Appendix: share links, badge rules, age gate, minor firewall, touch input (2026-11-17 20:45 UTC)
+- `getProfileShareUrl` (src/lib/profile-url.ts) is the single source for Copy/Share: verified root `rout.be/<handle>` (or `/@<handle>` when the member chose @, never `/u/`), unverified root folds to `/u/`, alias `rout.be/u/<alias>`, workspace `rout.be/w/<slug>`. Wired into Profile Studio (basic info copy, header ShareMenu x2) and the dashboard IdentityCard.
+- Identity badge rule in src/lib/profile/identity-badge-visibility.ts: blue shield always on a KYC-attested root profile (cannot be switched off); alias shows a mark only when "Verificatiebadge op je aliasprofiel" (`humanBadgeVisible`) is on, now default off (unset = off).
+- `age_gate?min_age=N` (13..21) and bare `age_gate` (=18) accepted next to `age_gate:N`; claims are only `{ age_verified, min_age }` (strictest requested gate). Console registers both notations.
+- Minor firewall: when an attested age is below 18, userinfo drops legal_identity, identity:legal_name, identity:national_id, email, phone, address and profile (applyMinorFirewall). No attestation = no known age = unchanged.
+- Touch devices: "Extra voorzichtig typen" falls back to the native password field (autocorrect/spellcheck off) and the switch is hidden.
+- 0290: NOT applied. Still in db-pending/. Owner runs on own machine: move it to db/, then `bun scripts/migration-rollout.ts 0290_identity_os_sign.sql --after=0289_merge_after_field_encryption.sql --apply` with MIGRATION_URL, then set CODE_SCHEMA_LEVEL to 0290 and refresh the snapshot.
+- Not done: unified sign-in/sign-up card with inline password (password entry is deliberately isolated on /secure/* documents; merging needs an owner decision), post-OAuth date-of-birth modal (conflicts with zero-plaintext DOB rule), PAdES/CSC.
