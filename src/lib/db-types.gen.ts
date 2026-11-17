@@ -2431,6 +2431,8 @@ export interface PublicUsersRow {
   "global_shadow_ban_starts_at": string | Date | null;
   "global_shadow_ban_until": string | Date | null;
   "trust_healed_at": string | Date | null;
+  "age_floor": number | null;
+  "age_floor_at": string | Date | null;
 }
 
 export interface PublicVerificationPaymentsRow {
