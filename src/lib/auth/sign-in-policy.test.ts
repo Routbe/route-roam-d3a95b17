@@ -72,13 +72,27 @@ describe("admin access", () => {
 
 describe("sign-up ticket", () => {
   const secret = "x".repeat(40);
-  const data = { email: "a@b.be", name: "A", dob: "2000-01-01", parentEmail: null, consent: "v1" };
+  const data = { email: "a@b.be", name: "A", ageFloor: 21, parentEmail: null, consent: "v1" };
 
   it("round-trips and expires after 10 minutes", async () => {
     const t = await signSignupTicket(secret, data, 1000);
     expect((await verifySignupTicket(secret, t, 1000))?.email).toBe("a@b.be");
     expect(SIGNUP_TICKET_TTL_S).toBe(600);
     expect(await verifySignupTicket(secret, t, 1000 + 601)).toBeNull();
+  });
+
+  it("carries only the age floor, never a date of birth", async () => {
+    const t = await signSignupTicket(secret, data, 1000);
+    const v = await verifySignupTicket(secret, t, 1000);
+    expect(v?.ageFloor).toBe(21);
+    expect(JSON.stringify(v)).not.toMatch(/dob|\d{4}-\d{2}-\d{2}/);
+  });
+
+  it("converts a ticket signed before the release to a floor and drops the date", async () => {
+    const legacy = { email: "a@b.be", name: "A", dob: "2015-06-01", parentEmail: "p@b.be", consent: "v1" };
+    const v = await verifySignupTicket(secret, await signSignupTicket(secret, legacy as never, 1000), 1000);
+    expect(typeof v?.ageFloor).toBe("number");
+    expect(v && "dob" in v).toBe(false);
   });
 
   it("rejects a tampered ticket or another secret", async () => {
