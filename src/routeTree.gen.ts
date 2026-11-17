@@ -38,6 +38,7 @@ import { Route as InfoRouteImport } from './routes/info'
 import { Route as LeavingRouteImport } from './routes/leaving'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PressRouteImport } from './routes/press'
@@ -598,6 +599,11 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManifestoRoute = ManifestoRouteImport.update({
@@ -2840,6 +2846,7 @@ export interface FileRoutesByFullPath {
   '/leaving': typeof LeavingRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/press': typeof PressRoute
@@ -3280,6 +3287,7 @@ export interface FileRoutesByTo {
   '/leaving': typeof LeavingRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/press': typeof PressRoute
@@ -3719,6 +3727,7 @@ export interface FileRoutesById {
   '/leaving': typeof LeavingRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/onboarding': typeof OnboardingRoute
   '/press': typeof PressRoute
@@ -4168,6 +4177,7 @@ export interface FileRouteTypes {
     | '/leaving'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/press'
@@ -4608,6 +4618,7 @@ export interface FileRouteTypes {
     | '/leaving'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/press'
@@ -5046,6 +5057,7 @@ export interface FileRouteTypes {
     | '/leaving'
     | '/llms-full.txt'
     | '/llms.txt'
+    | '/login'
     | '/manifesto'
     | '/onboarding'
     | '/press'
@@ -5495,6 +5507,7 @@ export interface RootRouteChildren {
   LeavingRoute: typeof LeavingRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  LoginRoute: typeof LoginRoute
   ManifestoRoute: typeof ManifestoRoute
   OnboardingRoute: typeof OnboardingRoute
   PressRoute: typeof PressRoute
@@ -5916,6 +5929,13 @@ declare module '@tanstack/react-router' {
       path: '/llms.txt'
       fullPath: '/llms.txt'
       preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manifesto': {
@@ -9496,6 +9516,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeavingRoute: LeavingRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  LoginRoute: LoginRoute,
   ManifestoRoute: ManifestoRoute,
   OnboardingRoute: OnboardingRoute,
   PressRoute: PressRoute,
