@@ -11,7 +11,7 @@ import {
   effectiveUrlStyle,
   styledProfileLabel,
   styledProfilePath,
-  styledProfileUrl,
+  getProfileShareUrl,
   urlStyleForAtPreference,
   urlStyleHasAt,
   type UrlStyle,
@@ -58,7 +58,7 @@ export function IdentityCard() {
 
   const origin = typeof window === "undefined" ? "https://rout.be" : window.location.origin;
   const label = styledProfileLabel(handle, style);
-  const shareUrl = styledProfileUrl(handle, style, origin);
+  const shareUrl = getProfileShareUrl({ type: "root", handle, verified, urlStyle: style }, origin);
 
   const copy = async () => {
     try {
