@@ -46,7 +46,7 @@ const SCOPES = [
   {
     id: "sybil_proof",
     label: "sybil_proof",
-    text: "Eén mens = één account in jouw app: je krijgt app_nullifier = BLAKE3(universele nullifier + jouw app-ID). Altijd dezelfde waarde voor dezelfde persoon bij jou, onbruikbaar om leden tussen apps te koppelen.",
+    text: "Eén mens = één account in jouw app: je krijgt een app_nullifier die ROUT met een geheime sleutel afleidt (ECVRF, RFC 9381) uit de universele nullifier en jouw app-ID. Altijd dezelfde waarde voor dezelfde persoon bij jou, onbruikbaar om leden tussen apps te koppelen.",
     locked: false,
   },
   {
