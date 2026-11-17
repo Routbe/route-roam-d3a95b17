@@ -15,7 +15,7 @@ describe("hub copy", () => {
 
   it("uses the owner's exact Dutch search text and chips", () => {
     expect(HUB_COPY.nl.search).toBe("Zoek provider, land of documenttype (bijv. itsme, DigiD, IDnow)...");
-    expect(Object.values(HUB_COPY.nl.filters)).toEqual(["Alle", "⚡ Nationale eID", "🛂 Paspoort & NFC", "🛡️ Zero-Knowledge"]);
+    expect(Object.values(HUB_COPY.nl.filters)).toEqual(["Alle", "⚡ Nationale eID", "🛂 ID-kaart, paspoort & NFC", "🛡️ Zero-Knowledge"]);
   });
 
   it("falls back to Dutch", () => {

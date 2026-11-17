@@ -1,6 +1,6 @@
 {
   "auth.ui.back": "Retour",
-  "auth.ui.title": "Connexion à ROUT",
+  "auth.ui.title": "Bienvenue sur ROUT",
   "auth.ui.subtitle": "Connectez-vous ou créez un compte avec votre adresse e-mail.",
   "auth.ui.email.label": "Adresse e-mail",
   "auth.ui.email.invalid": "Saisissez une adresse e-mail valide.",
@@ -111,7 +111,7 @@
   "auth.consent.mismatch": "L’URL de redirection {{received}} ne correspond pas aux URL enregistrées : {{expected}}.",
   "auth.consent.add": "Ajouter l’URL de redirection",
   "auth.consent.failed": "L’URL de redirection n’a pas pu être ajoutée.",
-  "auth.meta.signin": "Connexion à ROUT",
+  "auth.meta.signin": "Connexion ou inscription — ROUT",
   "auth.meta.admin": "Connexion | Administration ROUT",
   "auth.meta.adminDescription": "Accès sécurisé au portail d’administration ROUT.",
   "auth.meta.description": "Connectez-vous ou créez un compte pour gérer vos codes QR et liens courts.",

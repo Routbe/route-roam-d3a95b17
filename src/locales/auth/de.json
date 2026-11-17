@@ -1,6 +1,6 @@
 {
   "auth.ui.back": "Zurück",
-  "auth.ui.title": "Bei ROUT anmelden",
+  "auth.ui.title": "Willkommen bei ROUT",
   "auth.ui.subtitle": "Melde dich an oder erstelle ein Konto mit deiner E-Mail-Adresse.",
   "auth.ui.email.label": "E-Mail-Adresse",
   "auth.ui.email.invalid": "Gib eine gültige E-Mail-Adresse ein.",
@@ -111,7 +111,7 @@
   "auth.consent.mismatch": "Die Weiterleitungs-URL {{received}} stimmt nicht mit den registrierten URLs überein: {{expected}}.",
   "auth.consent.add": "Weiterleitungs-URL hinzufügen",
   "auth.consent.failed": "Die Weiterleitungs-URL konnte nicht hinzugefügt werden.",
-  "auth.meta.signin": "Bei ROUT anmelden",
+  "auth.meta.signin": "Anmelden oder registrieren — ROUT",
   "auth.meta.admin": "Anmelden | ROUT-Verwaltungsportal",
   "auth.meta.adminDescription": "Sicherer Zugriff auf das ROUT-Verwaltungsportal.",
   "auth.meta.description": "Melde dich an oder erstelle ein Konto, um deine QR-Codes und Kurzlinks zu verwalten.",
