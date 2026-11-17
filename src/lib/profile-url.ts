@@ -106,3 +106,35 @@ export function aliasRedirectFor(rawUsername: string, style: UrlStyle): string |
   const requested = requestedHasAt(rawUsername) ? `/u/@${handle}` : `/u/${handle}`;
   return requested === canonical ? null : canonical;
 }
+
+/** What a share link points at: the verified root identity, a private alias, or a workspace. */
+export type ShareTarget =
+  | { type: "root"; handle: string; verified: boolean; urlStyle?: UrlStyle }
+  | { type: "alias"; handle: string; urlStyle?: UrlStyle }
+  | { type: "workspace"; slug: string };
+
+/**
+ * The one canonical URL every "Copy link" / "Share" button uses.
+ *
+ * - Verified root profile: `https://rout.be/<handle>` (or `/@<handle>` when the
+ *   member chose the @ sign) — never under `/u/`.
+ * - Unverified root profile: folded back to its `/u/` twin (clean root URLs are
+ *   the verified namespace).
+ * - Private alias: `https://rout.be/u/<alias>` (keeps the member's @ choice).
+ * - Workspace: `https://rout.be/w/<slug>`.
+ *
+ * It always returns the shape the server serves without a redirect, so a copied
+ * link never bounces.
+ */
+export function getProfileShareUrl(target: ShareTarget, origin = "https://rout.be"): string {
+  const base = origin.replace(/\/$/, "");
+  if (target.type === "workspace") {
+    const slug = encodeURIComponent(target.slug.trim().toLowerCase());
+    return `${base}/w/${slug}`;
+  }
+  const handle = canonicalHandle(target.handle);
+  const hasAt = urlStyleHasAt(target.urlStyle ?? "clean");
+  if (target.type === "alias") return `${base}/u/${hasAt ? "@" : ""}${handle}`;
+  if (!target.verified) return `${base}/u/${hasAt ? "@" : ""}${handle}`;
+  return `${base}/${hasAt ? "@" : ""}${handle}`;
+}
