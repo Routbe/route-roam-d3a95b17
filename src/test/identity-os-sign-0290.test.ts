@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * db-pending/0290 on an offline replay of db/, applied with the definer guard in the same
+ * db/0290 (live on Neon since 2026-11-17) on an offline replay of db/ up to 0289, applied with the definer guard in the same
  * transaction. Never touches Neon. Proves:
  *   - the age floor is stored only through rout_kyc_attest (0..21), only rises for the same member,
  *     and the 6-argument form keeps working without an age;
@@ -15,7 +15,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { applyPending, replayDb, ROOT } from "../../scripts/formal-rls/replay";
+import { applyReleased, replayDb, ROOT } from "../../scripts/formal-rls/replay";
 import { universalNullifier } from "@/lib/kyc/nullifier";
 
 const KYC = "00000000-0000-4000-8000-000000002901";
@@ -30,8 +30,8 @@ const ATTEST6 = "select public.rout_kyc_attest($1, $2::text[], $3::text[], $4, $
 
 let db: PGlite;
 beforeAll(async () => {
-  db = await replayDb();
-  await applyPending(db, "0290_identity_os_sign.sql");
+  db = await replayDb((f) => f < "0290");
+  await applyReleased(db, "0290_identity_os_sign.sql");
   await db.exec(`
     insert into public.users (id, email) values ('${KYC}', 'k@example.test'), ('${OTHER}', 'o@example.test'), ('${PLAIN}', 'p@example.test');
     insert into public.workspaces (id, name, slug, domain, domain_verified_at) values
