@@ -310,7 +310,9 @@ export function ProfileView({
             ? "verified"
             : prefs.badgeType === "human" && !zkHuman
               ? "verified"
-              : prefs.badgeType;
+              : prefs.badgeType === "none" && kycAttested
+                ? "verified"
+                : prefs.badgeType;
   const hasPro = profile.is_pro ?? Boolean(profile.verified);
   const showWatermark =
     shouldShowWatermark(hasPro, prefs) &&
