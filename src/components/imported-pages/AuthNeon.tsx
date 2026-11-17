@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/router-compat";
 import { toast } from "sonner";
-import { ArrowLeft, Fingerprint, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Fingerprint, ChevronDown, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
