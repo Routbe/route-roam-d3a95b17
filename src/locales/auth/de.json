@@ -260,6 +260,8 @@
   "auth.mf.orEmail": "oder mit deiner E-Mail-Adresse",
   "auth.mf.sendLink": "Schick mir einen Anmeldelink",
   "auth.mf.usePassword": "Mit Passwort anmelden",
+  "auth.mf.passwordAccordionBody": "Dein Passwort gibst du in einem separaten, abgeschirmten ROUT-Fenster ein. Dort wird es auf deinem Gerät verschlüsselt; der Server sieht es nie.",
+  "auth.mf.passwordAccordionCta": "Weiter zum Passwortfenster",
   "auth.mf.useLink": "Lieber einen Anmeldelink",
   "auth.mf.password": "Passwort",
   "auth.mf.wrongPassword": "E-Mail-Adresse oder Passwort ist falsch.",
