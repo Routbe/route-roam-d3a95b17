@@ -148,6 +148,7 @@ describe("rollback", () => {
              to_regprocedure('public.rout_my_age_floor()')::text as mine`)).rows;
     expect(r).toEqual({ col: 0, mine: null });
     await db.exec(`update public.users set date_of_birth = date '2012-01-01' where id = '${NOAGE}'`);
-    expect((await user(NOAGE)).minor).toBe(true);
+    const [{ m }] = (await db.query<{ m: boolean }>(`select is_minor as m from public.users where id = '${NOAGE}'`)).rows as [{ m: boolean }];
+    expect(m).toBe(true);
   });
 });
