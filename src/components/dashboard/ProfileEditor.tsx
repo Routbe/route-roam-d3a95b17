@@ -303,13 +303,6 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
   /** `profiles.username` van hetzelfde account (geverifieerde rootnaam). */
   const [rootUsername, setRootUsername] = useState<string | null>(null);
   const { space: identitySpace, select: selectIdentitySpace } = useIdentitySpace(verified);
-  // Canonical share link for every Copy/Share control in this editor.
-  const shareHandle = claimed ?? normalized;
-  const shareUrl = isWorkspace
-    ? getProfileShareUrl({ type: "workspace", slug: workspaceSlug ?? shareHandle })
-    : alias
-      ? getProfileShareUrl({ type: "alias", handle: shareHandle, urlStyle })
-      : getProfileShareUrl({ type: "root", handle: shareHandle, verified, urlStyle });
 
   const [legalName, setLegalName] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
@@ -514,6 +507,13 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
             : rawUrlStyle,
         verified,
       );
+  // Canonical share link for every Copy/Share control in this editor.
+  const shareHandle = claimed ?? normalized;
+  const shareUrl = isWorkspace
+    ? getProfileShareUrl({ type: "workspace", slug: workspaceSlug ?? shareHandle })
+    : alias
+      ? getProfileShareUrl({ type: "alias", handle: shareHandle, urlStyle })
+      : getProfileShareUrl({ type: "root", handle: shareHandle, verified, urlStyle });
   /**
    * Eén bron van waarheid voor de live URL: de actieve rootnaam wanneer de
    * claim actief is, anders altijd `/u/<alias>`. Nooit uit lokale state.
