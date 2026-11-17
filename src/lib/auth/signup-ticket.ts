@@ -6,6 +6,7 @@
  * Format: `su.<b64url(json)>.<b64url(hmac)>`, valid 10 minutes.
  */
 import { SIGNUP_CONTEXT_PREFIX } from "./sign-in-policy";
+import { ageFloorFromBirthDate, isAgeFloor } from "@/lib/age/age-floor";
 
 const enc = new TextEncoder();
 export const SIGNUP_TICKET_TTL_S = 10 * 60;
@@ -13,7 +14,8 @@ export const SIGNUP_TICKET_TTL_S = 10 * 60;
 export type SignupTicket = {
   email: string;
   name: string;
-  dob: string;
+  /** Whole years, capped at 21; the date of birth itself never enters a ticket. */
+  ageFloor: number;
   parentEmail: string | null;
   consent: string;
   exp: number;
@@ -46,8 +48,15 @@ export async function verifySignupTicket(secret: string, token: string | null | 
   }
   if (!ok) return null;
   try {
-    const t = JSON.parse(new TextDecoder().decode(fromB64url(body))) as SignupTicket;
+    const t = JSON.parse(new TextDecoder().decode(fromB64url(body))) as SignupTicket & { dob?: unknown };
     if (typeof t.email !== "string" || typeof t.exp !== "number" || t.exp < nowS) return null;
+    // Tickets signed before the age-floor release (valid at most 10 minutes) still carry the date.
+    if (!isAgeFloor(t.ageFloor)) {
+      const floor = ageFloorFromBirthDate(t.dob);
+      if (floor === null) return null;
+      t.ageFloor = floor;
+    }
+    delete t.dob;
     return t;
   } catch {
     return null;

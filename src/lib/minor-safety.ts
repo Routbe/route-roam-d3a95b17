@@ -69,6 +69,17 @@ export function signupAgeProblem(input: { dob: string; parentEmail: string; emai
   return null;
 }
 
+/** Same rule from a whole-year age floor (the server never keeps the date, db-pending/0291). */
+export function signupFloorProblem(input: { ageFloor: number | null; parentEmail: string; email: string }):
+  | null | "dob_invalid" | "parent_email_required" | "parent_email_same" {
+  if (input.ageFloor === null) return "dob_invalid";
+  if (input.ageFloor >= MINOR_AGE) return null;
+  const p = input.parentEmail.trim().toLowerCase();
+  if (!EMAIL_RE.test(p) || p.length > 254) return "parent_email_required";
+  if (p === input.email.trim().toLowerCase()) return "parent_email_same";
+  return null;
+}
+
 /** Who may send a question at a level. `verified` = signed in with a verified ROUT account. */
 export function canSendQuestion(level: QaLevel, viewer: { signedIn: boolean; verified: boolean }): boolean {
   switch (level) {

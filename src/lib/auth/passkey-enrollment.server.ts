@@ -52,7 +52,7 @@ export async function finalizeEnrollment(
     if (!user?.id) throw reject("account_create_failed");
     try {
       const { recordSignupAge } = await import("@/lib/minor-safety.server");
-      await recordSignupAge(t.email, t.dob, t.parentEmail);
+      await recordSignupAge(t.email, t.ageFloor, t.parentEmail);
     } catch (e) {
       console.error("[passkey-signup] recording age failed", e instanceof Error ? e.message : e);
     }
