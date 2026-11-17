@@ -1,6 +1,6 @@
 {
   "auth.ui.back": "Back",
-  "auth.ui.title": "Sign in to ROUT",
+  "auth.ui.title": "Welcome to ROUT",
   "auth.ui.subtitle": "Sign in or create an account with your email address.",
   "auth.ui.email.label": "Email address",
   "auth.ui.email.invalid": "Enter a valid email address.",
@@ -111,7 +111,7 @@
   "auth.consent.mismatch": "The redirect URL {{received}} does not match the registered URLs: {{expected}}.",
   "auth.consent.add": "Add redirect URL",
   "auth.consent.failed": "The redirect URL could not be added.",
-  "auth.meta.signin": "Sign in to ROUT",
+  "auth.meta.signin": "Sign in or sign up — ROUT",
   "auth.meta.admin": "Sign in | ROUT admin portal",
   "auth.meta.adminDescription": "Secure access to the ROUT admin portal.",
   "auth.meta.description": "Sign in or create an account to manage your QR codes and short links.",

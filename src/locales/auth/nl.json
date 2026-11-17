@@ -1,6 +1,6 @@
 {
   "auth.ui.back": "Terug",
-  "auth.ui.title": "Inloggen bij ROUT",
+  "auth.ui.title": "Welkom bij ROUT",
   "auth.ui.subtitle": "Log in of maak een account aan met je e-mailadres.",
   "auth.ui.email.label": "E-mailadres",
   "auth.ui.email.invalid": "Vul een geldig e-mailadres in.",
@@ -111,7 +111,7 @@
   "auth.consent.mismatch": "De redirect-URL {{received}} komt niet overeen met de geregistreerde URL’s: {{expected}}.",
   "auth.consent.add": "Redirect-URL toevoegen",
   "auth.consent.failed": "De redirect-URL kon niet worden toegevoegd.",
-  "auth.meta.signin": "Inloggen bij ROUT",
+  "auth.meta.signin": "Inloggen of registreren — ROUT",
   "auth.meta.admin": "Inloggen | ROUT beheerportaal",
   "auth.meta.adminDescription": "Beveiligde toegang tot het ROUT beheerportaal.",
   "auth.meta.description": "Log in of maak een account aan om je QR-codes en korte links te beheren.",
