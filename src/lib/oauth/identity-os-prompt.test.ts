@@ -6,7 +6,7 @@ describe("buildIdentityOsPrompt", () => {
     const p = buildIdentityOsPrompt({ tool: "lovable", scopes: ["sybil_proof", "age_gate"], ageMin: 16, clientId: "rout_abc" });
     expect(p).toContain("scope=openid sybil_proof age_gate?min_age=16`");
     expect(p).toContain("UNIQUE constraint");
-    expect(p).toContain(""min_age": 16");
+    expect(p).toContain(`"min_age": 16`);
     expect(p).toContain("`rout_abc`");
     expect(p).not.toContain("legal_identity");
   });
