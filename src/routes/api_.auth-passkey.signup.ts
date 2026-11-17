@@ -18,15 +18,19 @@ export const Route = createFileRoute("/api_/auth-passkey/signup")({
         const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
         const email = typeof body?.["email"] === "string" ? body["email"].trim().toLowerCase() : "";
         const name = typeof body?.["name"] === "string" ? body["name"].trim().slice(0, 80) : "";
-        const dob = typeof body?.["dob"] === "string" ? body["dob"] : "";
+        // The date of birth is read only here, in memory: the wiped-bytes helper turns it into whole
+        // years and the date itself is never stored, logged or put in the ticket (db-pending/0291).
+        const { ageFloorFromBirthDate } = await import("@/lib/age/age-floor");
+        const ageFloor = ageFloorFromBirthDate(body?.["dob"]);
+        if (body) delete body["dob"];
         const parentEmail = typeof body?.["parentEmail"] === "string" ? body["parentEmail"].trim().toLowerCase() : "";
         const { SIGNUP_CONSENT_VERSION } = await import("@/lib/signup-consent");
         if (body?.["consent"] !== SIGNUP_CONSENT_VERSION) {
           return Response.json({ code: "consent_required", message: "Ga akkoord met de Algemene Voorwaarden en het Privacybeleid en bevestig dat je 16 jaar of ouder bent." }, { status: 400, headers: noStore });
         }
         if (!EMAIL.test(email) || email.length > 254) return Response.json({ code: "email_invalid", message: "Vul een geldig e-mailadres in." }, { status: 400, headers: noStore });
-        const { signupAgeProblem, isMinorDob } = await import("@/lib/minor-safety");
-        const problem = signupAgeProblem({ dob, parentEmail, email });
+        const { signupFloorProblem, MINOR_AGE } = await import("@/lib/minor-safety");
+        const problem = signupFloorProblem({ ageFloor, parentEmail, email });
         if (problem) {
           return Response.json({ code: problem, message: problem === "dob_invalid" ? "Vul een geldige geboortedatum in." : "Vul het e-mailadres van je ouder of voogd in (niet je eigen adres)." }, { status: 400, headers: noStore });
         }
@@ -47,7 +51,7 @@ export const Route = createFileRoute("/api_/auth-passkey/signup")({
         const { signSignupTicket } = await import("@/lib/auth/signup-ticket");
         const ticket = await signSignupTicket(
           secret,
-          { email, name, dob, parentEmail: isMinorDob(dob) ? parentEmail : null, consent: SIGNUP_CONSENT_VERSION },
+          { email, name, ageFloor: ageFloor!, parentEmail: ageFloor! < MINOR_AGE ? parentEmail : null, consent: SIGNUP_CONSENT_VERSION },
           Math.floor(Date.now() / 1000),
         );
         return Response.json({ ticket }, { headers: noStore });

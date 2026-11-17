@@ -15,6 +15,8 @@ const MARKERS = {
   "0288": "public.rout_kyc_attest(text,text[],text[],boolean,boolean,text)",
   /** db/0290_identity_os_sign.sql (identity OS claims, IBAN via KYC, ROUT Sign) */
   "0290": "public.rout_my_identity_claims()",
+  /** db-pending/0291_age_floor_zero_dob.sql (whole-year age floor, no stored date of birth) */
+  "0291": "public.rout_my_age_floor()",
 } as const;
 export type SchemaFeature = keyof typeof MARKERS;
 
