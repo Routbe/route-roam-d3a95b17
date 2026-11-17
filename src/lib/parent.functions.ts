@@ -43,3 +43,27 @@ export const getMyMinorStatus = createServerFn({ method: "GET" })
     const s = await import("./minor-safety.server");
     return { minor: await s.isMinorUser(context.userId) };
   });
+
+/** Whether the signed-in member still has to fill in the age sheet (db/0291). */
+export const getMyAgeStatus = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async ({ context }) => {
+    const s = await import("./minor-safety.server");
+    return { needsAge: await s.myAgeFloorMissing(context.userId) };
+  });
+
+/**
+ * The age sheet: the date of birth is turned into a whole-year floor inside this handler and then
+ * dropped; it is never logged, returned or stored (owner rule 2026-11-17, db/0291).
+ */
+export const submitMyAge = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ dob: z.string().length(10), parentEmail: z.string().max(254).optional() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ageFloorFromBirthDate } = await import("@/lib/age/age-floor");
+    const floor = ageFloorFromBirthDate(data.dob);
+    (data as { dob?: string }).dob = undefined;
+    const s = await import("./minor-safety.server");
+    return { outcome: await s.recordMyAge(context.userId, floor, data.parentEmail ?? null) };
+  });

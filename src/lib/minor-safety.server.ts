@@ -126,6 +126,50 @@ export async function setQaLevel(token: string, level: QaLevel): Promise<boolean
   return rows[0]?.["ok"] === true;
 }
 
+/**
+ * Whether the signed-in member still has to give their age (db/0291): true only when the database
+ * knows neither a self-declared floor nor a KYC floor. Before 0291 nothing is asked (fails open to
+ * "no sheet"; the older sign-up path still records its age).
+ */
+export async function myAgeFloorMissing(userId: string): Promise<boolean> {
+  const { hasSchemaFeature } = await import("@/lib/schema-features.server");
+  if (!(await hasSchemaFeature("0291"))) return false;
+  const { withDbContext } = await import("@/lib/neon");
+  const rows = await withDbContext({ userId, workspaceId: null }, async () =>
+    (await sql`select public.rout_my_age_floor() as f`) as Row[]);
+  return rows[0]?.["f"] === null || rows[0]?.["f"] === undefined;
+}
+
+export type MyAgeOutcome = "ok" | "already_set" | "dob_invalid" | "parent_required" | "parent_email_same" | "unavailable";
+
+/**
+ * The post-sign-in age sheet. The date arrives only in this request and is turned into a whole-year
+ * floor by ageFloorFromBirthDate (which wipes its byte copy); only the floor reaches Neon.
+ */
+export async function recordMyAge(userId: string, ageFloor: number | null, parentEmail: string | null): Promise<MyAgeOutcome> {
+  const { isAgeFloor } = await import("@/lib/age/age-floor");
+  if (!isAgeFloor(ageFloor)) return "dob_invalid";
+  const { hasSchemaFeature } = await import("@/lib/schema-features.server");
+  if (!(await hasSchemaFeature("0291"))) return "unavailable";
+  const minor = ageFloor < MINOR_AGE;
+  const parent = minor ? (parentEmail ?? "").trim().toLowerCase() : null;
+  const token = minor ? newParentToken() : null;
+  const hash = token ? await hashParentToken(token) : null;
+  const { withDbContext } = await import("@/lib/neon");
+  const rows = await withDbContext({ userId, workspaceId: null }, async () =>
+    (await sql`select public.rout_record_my_age_floor(${ageFloor}::smallint, ${parent}, ${hash}) as r`) as Row[]);
+  const r = String(rows[0]?.["r"] ?? "unavailable");
+  if (r === "ok") {
+    if (minor && token && parent) {
+      const own = (await sql`select email from public.users where id = ${userId}`) as Row[];
+      await mailParentConsent(String(own[0]?.["email"] ?? ""), parent, token);
+    }
+    return "ok";
+  }
+  if (r === "already_set" || r === "parent_required" || r === "parent_email_same") return r;
+  return r === "invalid_input" ? "dob_invalid" : "unavailable";
+}
+
 export async function isMinorUser(userId: string): Promise<boolean> {
   const rows = (await sql`select public.rout_user_is_minor(${userId}) as m`) as Row[];
   return rows[0]?.["m"] === true;
