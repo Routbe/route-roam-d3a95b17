@@ -31,7 +31,7 @@ const ATTEST = "select public.rout_kyc_attest($1, $2::text[], $3::text[], $4, $5
 
 let db: PGlite;
 beforeAll(async () => {
-  db = await replayDb((f) => f !== "0288_universal_identity_nullifiers.sql");
+  db = await replayDb((f) => f < "0288");
   await applyReleased(db, "0288_universal_identity_nullifiers.sql");
   await db.exec(`
     insert into public.users (id, email) values ('${A}', 'a@example.test'), ('${B}', 'b@example.test'), ('${C}', 'c@example.test');

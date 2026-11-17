@@ -260,6 +260,8 @@
   "auth.mf.orEmail": "ou avec votre adresse e-mail",
   "auth.mf.sendLink": "Envoyez-moi un lien de connexion",
   "auth.mf.usePassword": "Se connecter avec un mot de passe",
+  "auth.mf.passwordAccordionBody": "Vous saisissez votre mot de passe dans une fenêtre ROUT séparée et isolée. Il y est chiffré sur votre appareil ; le serveur ne le voit jamais.",
+  "auth.mf.passwordAccordionCta": "Continuer vers la fenêtre du mot de passe",
   "auth.mf.useLink": "Plutôt un lien de connexion",
   "auth.mf.password": "Mot de passe",
   "auth.mf.wrongPassword": "Adresse e-mail ou mot de passe incorrect.",

@@ -260,6 +260,8 @@
   "auth.mf.orEmail": "of met je e-mailadres",
   "auth.mf.sendLink": "Stuur me een inloglink",
   "auth.mf.usePassword": "Inloggen met wachtwoord",
+  "auth.mf.passwordAccordionBody": "Je wachtwoord typ je in een apart, afgeschermd venster van ROUT. Daar wordt het in je eigen toestel versleuteld; de server ziet het nooit.",
+  "auth.mf.passwordAccordionCta": "Verder naar het wachtwoordvenster",
   "auth.mf.useLink": "Liever een inloglink",
   "auth.mf.password": "Wachtwoord",
   "auth.mf.wrongPassword": "E-mailadres of wachtwoord klopt niet.",

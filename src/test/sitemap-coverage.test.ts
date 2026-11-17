@@ -4,7 +4,7 @@ import { docs } from "@/lib/docs-catalog";
 import { STATIC_SITEMAP_ENTRIES, buildSitemapXml } from "@/lib/sitemap";
 
 // Static-looking routes which are deliberately not generic, indexable content.
-const EXCLUDED = new Set(["/auth", "/auth/bluesky", "/auth/continue", "/auth/mastodon/callback", "/signup", "/claim", "/card", "/hub", "/go", "/leaving", "/oauth/end-session"]);
+const EXCLUDED = new Set(["/auth", "/auth/bluesky", "/auth/continue", "/auth/mastodon/callback", "/signup", "/login", "/claim", "/card", "/hub", "/go", "/leaving", "/oauth/end-session"]);
 
 describe("complete public sitemap coverage", () => {
   it("includes every public content route, including every About and Info article", () => {

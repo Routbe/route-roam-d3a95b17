@@ -147,8 +147,11 @@ export interface ProfileDisplayPrefs {
   /** "legal" = handle blijft herleidbaar naar de wettelijke naam. */
   identityMode: IdentityMode;
   badgeVisible: boolean;
-  /** Mens-badge op het alias-profiel (`/u/…`) van een geverifieerd lid. */
-  humanBadgeVisible: boolean;
+  /**
+   * Verificatiebadge op het alias-profiel (`/u/…`) van een geverifieerd lid. Standaard uit.
+   * Opgeslagen onder `show_verification_on_alias`; oudere blobs met `humanBadgeVisible` blijven gelden.
+   */
+  show_verification_on_alias: boolean;
   /** Discrete Supporter/Pro-kroon naast de naam (los van het identiteitsvinkje). */
   supporterBadgeVisible: boolean;
   /** Badgeverzameling onder de profielkop tonen. */
@@ -273,7 +276,7 @@ export interface ProfileDisplayPrefs extends ProfileDesignPrefs {}
 export const DEFAULT_DISPLAY_PREFS: ProfileDisplayPrefs = {
   identityMode: "legal",
   badgeVisible: true,
-  humanBadgeVisible: false,
+  show_verification_on_alias: false,
   supporterBadgeVisible: true,
   badgeShowcaseVisible: true,
   publicProfile: true,
@@ -479,7 +482,7 @@ export function parseDisplayPrefs(raw: unknown): ProfileDisplayPrefs {
   return {
     identityMode: oneOf(r["identityMode"], ["legal", "private"] as const, "legal"),
     badgeVisible: r["badgeVisible"] === undefined ? true : Boolean(r["badgeVisible"]),
-    humanBadgeVisible: r["humanBadgeVisible"] === true,
+    show_verification_on_alias: (r["show_verification_on_alias"] ?? r["humanBadgeVisible"]) === true,
     supporterBadgeVisible: r["supporterBadgeVisible"] === undefined ? true : Boolean(r["supporterBadgeVisible"]),
     badgeShowcaseVisible:
       r["badgeShowcaseVisible"] === undefined ? true : Boolean(r["badgeShowcaseVisible"]),

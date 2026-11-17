@@ -287,7 +287,7 @@ export function ProfileView({
     badgeType: prefs.badgeType,
     isBusiness: Boolean(profile.is_business),
     isInfluencer: Boolean(profile.is_influencer),
-    aliasBadgeVisible: prefs.humanBadgeVisible,
+    aliasBadgeVisible: prefs.show_verification_on_alias,
   });
   // Supporter/Pro: aparte, discrete kroon — los van identiteit, alleen op de rootpagina.
   const showSupporter = !free && !publicPath?.startsWith("/w/") && showsSupporterCrown({ isPro: profile.is_pro === true, supporterBadgeVisible: prefs.supporterBadgeVisible });
@@ -542,14 +542,14 @@ export function ProfileView({
               backdrop={prefs.badgeBackdrop}
               backdropColor={prefs.badgeBackdropColor}
               verifiedAt={profile.verified_at ?? null}
-              size={earlyBeliever ? "md" : "sm"}
+              size="sm"
               cardBg={t.card}
               cardBorder={t.border}
               textColor={t.text}
               mutedColor={t.muted}
             />
           )}
-          {showSupporter && <SupporterCrownBadge color={t.muted} />}
+          {showSupporter && <SupporterCrownBadge color="var(--supporter-gold)" />}
           {earlyBeliever && (
             <PioneerBadge
               badgeId={profile.early_believer_id ?? null}

@@ -18,7 +18,7 @@ export function isPublicOidcPath(pathname: string): boolean {
 }
 
 /** Sensitive areas (sign-in, passkeys, account settings) that get strict isolation. */
-export const STRICT_PATH_PREFIXES = ["/auth", "/settings", "/studio/account"];
+export const STRICT_PATH_PREFIXES = ["/auth", "/login", "/settings", "/studio/account"];
 
 export function isStrictPath(pathname: string): boolean {
   return STRICT_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

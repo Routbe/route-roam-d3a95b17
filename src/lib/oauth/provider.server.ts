@@ -667,7 +667,12 @@ async function issueTokensForCode(
   row: Row,
   userId: string,
 ) {
-  const scopes = (row["scopes"] as string[] | null) ?? [];
+  // Minor firewall: a member whose attested age is below 18 gets legal_identity and every other
+  // personal-data scope stripped before any token is minted, so neither the id_token, the access
+  // token's scope, the refresh token nor introspection ever carries them.
+  const { applyMinorFirewall } = await import("./identity-os-scopes");
+  const { readIdentityOsInput } = await import("./identity-os.server");
+  const scopes = applyMinorFirewall((row["scopes"] as string[] | null) ?? [], (await readIdentityOsInput(userId, null)).ageVector);
   // Agent grants are ephemeral: at most one hour, whatever the client asks for.
   const { agentTokenTtl } = await import("@/lib/agent/agent-scopes");
   const ttl = agentTokenTtl(Math.min(Math.max(client.accessTokenTtl, TOKEN_TTL_MIN), TOKEN_TTL_MAX), scopes);

@@ -21,7 +21,7 @@ const IBAN = "BE68539007547034";
 
 let db: PGlite;
 beforeAll(async () => {
-  db = await replayDb();
+  db = await replayDb((f) => f < "0290"); // 0290 lets a KYC owner skip the name match
   const users = [OWNER, ADMIN, EDITOR, OUTSIDER, PLAIN_OWNER];
   await db.exec(`
     insert into public.users (id, email) values ${users.map((id, i) => `('${id}', 'c${i}@example.test')`).join(", ")};

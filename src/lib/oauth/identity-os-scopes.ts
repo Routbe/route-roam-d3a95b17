@@ -1,8 +1,10 @@
 /**
  * Sovereign Identity OS scopes for "Login met ROUT" (pure, browser-safe, tested).
  *
- *   sybil_proof     app_nullifier = BLAKE3("rout.app_nullifier.v1" 0x00 universal_nullifier 0x00 client_id):
- *                   one human = one account per app, and two apps cannot link their users.
+ *   sybil_proof     app_nullifier = first 32 bytes of ECVRF-EDWARDS25519-SHA512-TAI (RFC 9381) under a
+ *                   server-only key over "rout.app_nullifier.v2" 0x00 universal_nullifier 0x00 client_id:
+ *                   one human = one account per app; two apps cannot link their users, and a leaked
+ *                   universal nullifier alone cannot reproduce any app nullifier.
  *   real_human      is_real_human, true only from a zero-knowledge humanity proof (green shield).
  *   age_gate:N      age_over_N for N = 13..21 (the app picks one), from the capped age floor of a KYC
  *                   attestation; no date of birth leaves ROUT. A signed claim, not a zk-SNARK.
@@ -10,7 +12,7 @@
  *                   tier-2 records); Didit attestations since 2026-11-17 keep no name, so it is null.
  *                   Off by default on the consent screen: the member must tick it.
  */
-import { blake3 } from "@noble/hashes/blake3.js";
+import { ecvrfProofToHash, ecvrfProve } from "@/lib/crypto/ecvrf";
 import { ageGatePasses, AGE_GATE_MAX, AGE_GATE_MIN } from "@/lib/kyc/age-vector";
 
 export const AGE_GATE_SCOPES = Array.from({ length: AGE_GATE_MAX - AGE_GATE_MIN + 1 }, (_, i) => `age_gate:${AGE_GATE_MIN + i}`);
@@ -19,7 +21,7 @@ export const AGE_GATE_DEFAULT = 18;
 export const AGE_GATE_PARAM_SCOPES = Array.from({ length: AGE_GATE_MAX - AGE_GATE_MIN + 1 }, (_, i) => `age_gate?min_age=${AGE_GATE_MIN + i}`);
 export const IDENTITY_OS_SCOPES: readonly string[] = ["sybil_proof", "real_human", "legal_identity", "age_gate", ...AGE_GATE_SCOPES, ...AGE_GATE_PARAM_SCOPES];
 /** Scopes that release personal data; never released for a member under 18. */
-export const MINOR_BLOCKED_SCOPES: readonly string[] = ["legal_identity", "identity:legal_name", "identity:national_id", "email", "phone", "address", "profile"];
+export const MINOR_BLOCKED_SCOPES: readonly string[] = ["legal_identity", "identity:legal_name", "identity:national_id", "email", "phone", "address", "profile", "profile:read"];
 
 /** The minimum age of an age_gate scope (`age_gate`, `age_gate:N`, `age_gate?min_age=N`), or null. */
 export function ageGateMin(scope: string): number | null {
@@ -56,12 +58,14 @@ export function isKnownMinor(ageVector: number | null): boolean {
 
 const HEX64 = /^[0-9a-f]{64}$/;
 
-/** Per-app nullifier; deterministic for (person, app), unlinkable across apps. */
-export function appNullifier(universalNullifier: string, clientId: string): string {
+/** Per-app nullifier via RFC 9381 ECVRF; deterministic for (person, app, key), unlinkable across apps. */
+export function appNullifier(universalNullifier: string, clientId: string, vrfSecret: Uint8Array): string {
   if (!HEX64.test(universalNullifier)) throw new Error("app_nullifier_input");
   if (!clientId || clientId.length > 200) throw new Error("app_nullifier_input");
-  const msg = new TextEncoder().encode(`rout.app_nullifier.v1\u0000${universalNullifier}\u0000${clientId}`);
-  return [...blake3(msg)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  if (vrfSecret.length !== 32) throw new Error("app_nullifier_key");
+  const alpha = new TextEncoder().encode(`rout.app_nullifier.v2\u0000${universalNullifier}\u0000${clientId}`);
+  const beta = ecvrfProofToHash(ecvrfProve(vrfSecret, alpha));
+  return [...beta.subarray(0, 32)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export type IdentityOsInput = {
@@ -75,11 +79,12 @@ export type IdentityOsInput = {
 };
 
 /** Claims for the granted identity-OS scopes and the scopes that were answered (for the disclosure log). */
-export function identityOsClaims(granted: readonly string[], clientId: string, input: IdentityOsInput): { claims: Record<string, unknown>; disclosed: string[] } {
+export function identityOsClaims(granted: readonly string[], clientId: string, input: IdentityOsInput, vrfSecret: Uint8Array | null = null): { claims: Record<string, unknown>; disclosed: string[] } {
   const claims: Record<string, unknown> = {};
   const disclosed: string[] = [];
   if (granted.includes("sybil_proof")) {
-    const n = input.rootNullifier && HEX64.test(input.rootNullifier) ? appNullifier(input.rootNullifier, clientId) : null;
+    // No server key = no nullifier (fails closed: sybil_proof false), never an unkeyed fallback.
+    const n = vrfSecret && input.rootNullifier && HEX64.test(input.rootNullifier) ? appNullifier(input.rootNullifier, clientId, vrfSecret) : null;
     claims["sybil_proof"] = n !== null;
     if (n) claims["app_nullifier"] = n;
     disclosed.push("sybil_proof");

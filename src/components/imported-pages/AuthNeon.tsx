@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/router-compat";
 import { toast } from "sonner";
-import { ArrowLeft, Fingerprint, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Fingerprint, ChevronDown, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -434,13 +434,22 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
                   </form>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {passwordAvailable && (
-                      // Full page load: the secure document is cross-origin isolated (COOP/COEP).
-                      <a
-                        href={`${SECURE_PASSWORD_PATH}${EMAIL_REGEX.test(email.trim()) ? `#${new URLSearchParams({ email: email.trim().toLowerCase() }).toString()}` : ""}`}
-                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                      >
-                        <Lock className="h-3.5 w-3.5" aria-hidden /> {t("auth.mf.usePassword")}
-                      </a>
+                      // Inline accordion; the password itself is typed only on the secure document,
+                      // which needs a full page load because it is cross-origin isolated (COOP/COEP).
+                      <details className="group w-full rounded-lg border border-border">
+                        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+                          <Lock className="h-3.5 w-3.5" aria-hidden /> {t("auth.mf.usePassword")}
+                          <ChevronDown className="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+                        </summary>
+                        <div className="space-y-2 px-3 pb-3">
+                          <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.mf.passwordAccordionBody")}</p>
+                          <Button asChild variant="outline" className="h-11 w-full gap-2 rounded-lg">
+                            <a href={`${SECURE_PASSWORD_PATH}${EMAIL_REGEX.test(email.trim()) ? `#${new URLSearchParams({ email: email.trim().toLowerCase() }).toString()}` : ""}`}>
+                              <Lock className="h-4 w-4" aria-hidden /> {t("auth.mf.passwordAccordionCta")}
+                            </a>
+                          </Button>
+                        </div>
+                      </details>
                     )}
                   </div>
                   {adminPortal && <p className="text-[11px] text-muted-foreground">{t("auth.mf.adminNote")}</p>}

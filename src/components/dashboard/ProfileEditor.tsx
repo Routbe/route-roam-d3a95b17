@@ -1968,8 +1968,8 @@ export function ProfileEditor({ variant = "verified", pageMode = "profile", onPa
                       <Switch
                         aria-label={t("studio.editor.humanBadge")}
                         disabled={!verified}
-                        checked={prefs.humanBadgeVisible}
-                        onCheckedChange={(v) => setPref("humanBadgeVisible", v)}
+                        checked={prefs.show_verification_on_alias}
+                        onCheckedChange={(v) => setPref("show_verification_on_alias", v)}
                       />
                     </div>
 

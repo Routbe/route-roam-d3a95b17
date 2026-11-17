@@ -13,7 +13,7 @@ const MARKERS = {
   "0287": "public.rout_profile_field_keys()",
   /** db/0288_universal_identity_nullifiers.sql (cross-provider identity anchors) */
   "0288": "public.rout_kyc_attest(text,text[],text[],boolean,boolean,text)",
-  /** db-pending/0290_identity_os_sign.sql (identity OS claims, IBAN via KYC, ROUT Sign) */
+  /** db/0290_identity_os_sign.sql (identity OS claims, IBAN via KYC, ROUT Sign) */
   "0290": "public.rout_my_identity_claims()",
 } as const;
 export type SchemaFeature = keyof typeof MARKERS;

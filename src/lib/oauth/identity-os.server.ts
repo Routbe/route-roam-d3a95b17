@@ -30,3 +30,17 @@ export async function readIdentityOsInput(userId: string, legalName: IdentityOsI
   const pub = await readPublicIdentity(userId);
   return { legalIdentity: pub.diditVerified, realHuman: pub.realHuman, ageVector: null, rootNullifier: null, legalName };
 }
+
+/**
+ * The ECVRF secret for app nullifiers: HKDF-SHA256 over ROUT_SUBJECT_MASTER_KEY with its own
+ * salt and info, read per call. Null when the master key is missing, so no nullifier is issued.
+ * The caller wipes the returned bytes after use.
+ */
+export async function appNullifierVrfSecret(): Promise<Uint8Array | null> {
+  const master = process.env["ROUT_SUBJECT_MASTER_KEY"] ?? "";
+  if (master.length < 32) return null;
+  const { hkdf } = await import("@noble/hashes/hkdf.js");
+  const { sha256 } = await import("@noble/hashes/sha2.js");
+  const enc = new TextEncoder();
+  return hkdf(sha256, enc.encode(master), enc.encode("rout.app_nullifier"), enc.encode("ecvrf-edwards25519-sha512-tai.v1"), 32);
+}
