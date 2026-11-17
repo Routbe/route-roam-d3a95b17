@@ -96,9 +96,15 @@ export async function generateUserInfoResponse(
   const osScopes = grantedScopes.filter((s) => IDENTITY_OS_SCOPES.includes(s));
   let osDisclosed: string[] = [];
   if (osScopes.length) {
-    const { readIdentityOsInput } = await import("@/lib/oauth/identity-os.server");
+    const { appNullifierVrfSecret, readIdentityOsInput } = await import("@/lib/oauth/identity-os.server");
     const input = await readIdentityOsInput(userId, id.tier === "tier_2" ? splitLegalName(id.legalName) : null);
-    const os = identityOsClaims(osScopes, clientId, input);
+    const vrfSecret = osScopes.includes("sybil_proof") ? await appNullifierVrfSecret() : null;
+    let os: ReturnType<typeof identityOsClaims>;
+    try {
+      os = identityOsClaims(osScopes, clientId, input, vrfSecret);
+    } finally {
+      vrfSecret?.fill(0);
+    }
     Object.assign(claims, os.claims);
     osDisclosed = os.disclosed;
   }
