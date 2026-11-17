@@ -25948,6 +25948,22 @@
           "default": null,
           "identity": null,
           "generated": null
+        },
+        {
+          "name": "age_floor",
+          "type": "smallint",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
+        },
+        {
+          "name": "age_floor_at",
+          "type": "date",
+          "notNull": false,
+          "default": null,
+          "identity": null,
+          "generated": null
         }
       ],
       "constraints": [
@@ -25955,6 +25971,11 @@
           "name": "users_account_status_check",
           "kind": "c",
           "def": "CHECK ((account_status = ANY (ARRAY['active'::text, 'migrated_sunset'::text, 'retired'::text, 'pending_deletion'::text])))"
+        },
+        {
+          "name": "users_age_floor_shape",
+          "kind": "c",
+          "def": "CHECK ((((age_floor IS NULL) AND (age_floor_at IS NULL)) OR (((age_floor >= 0) AND (age_floor <= 21)) AND (age_floor_at IS NOT NULL))))"
         },
         {
           "name": "users_auth_user_id_fkey",
@@ -25975,6 +25996,11 @@
           "name": "users_migrated_to_workspace_id_fkey",
           "kind": "f",
           "def": "FOREIGN KEY (migrated_to_workspace_id) REFERENCES workspaces(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "users_no_birth_date",
+          "kind": "c",
+          "def": "CHECK ((date_of_birth IS NULL))"
         },
         {
           "name": "users_parent_email_format",
@@ -26002,7 +26028,7 @@
         "CREATE TRIGGER disclosure_head_protect BEFORE INSERT OR UPDATE OF latest_audit_hash ON public.users FOR EACH ROW EXECUTE FUNCTION disclosure_head_protect()",
         "CREATE TRIGGER on_user_created AFTER INSERT ON public.users FOR EACH ROW EXECUTE FUNCTION handle_new_user()",
         "CREATE TRIGGER reserve_recovery_email BEFORE INSERT OR UPDATE OF email ON public.users FOR EACH ROW EXECUTE FUNCTION reserve_recovery_email()",
-        "CREATE TRIGGER rout_users_minor_sync BEFORE INSERT OR UPDATE OF date_of_birth ON public.users FOR EACH ROW EXECUTE FUNCTION rout_users_minor_sync()"
+        "CREATE TRIGGER rout_users_minor_sync BEFORE INSERT OR UPDATE OF age_floor, age_floor_at ON public.users FOR EACH ROW EXECUTE FUNCTION rout_users_minor_sync()"
       ],
       "rls": true,
       "forceRls": false,
@@ -34676,6 +34702,12 @@
     },
     {
       "schema": "public",
+      "name": "rout_my_age_floor",
+      "args": "",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_my_age_floor()\n RETURNS smallint\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  -- least() and greatest() skip nulls, so the cap is applied only to a known age.\n  select case when s.g is null then null else least(21, s.g)::smallint end\n    from (select greatest(\n      (select u.age_floor + pg_catalog.date_part('year',\n                pg_catalog.age(current_date::timestamp, u.age_floor_at::timestamp))::integer\n         from public.users u where u.id = public.rout_current_user_id()),\n      (select pg_catalog.max(n.age_floor)::integer from public.verified_identity_nullifiers n\n        where n.user_id = public.rout_current_user_id())) as g) s\n$function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_my_identity_claims",
       "args": "",
       "def": "CREATE OR REPLACE FUNCTION public.rout_my_identity_claims()\n RETURNS TABLE(has_legal_identity boolean, is_real_human boolean, age_floor smallint, root_nullifier text)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  with me as (select public.rout_current_user_id() as id)\n  select\n    exists (select 1 from public.verified_identity_nullifiers n\n             where n.user_id = me.id and n.evidence = 'kyc_document' and n.has_legal_identity)\n      or exists (select 1 from public.identity_verifications iv\n                  where iv.user_id = me.id and coalesce(iv.is_verified, false) and iv.verification_provider::text = 'didit')\n      or exists (select 1 from public.verified_identities vi\n                  where vi.user_id = me.id and coalesce(vi.tier_2_legal_identity, false) and vi.national_id_nullifier is not null),\n    exists (select 1 from public.verified_identity_nullifiers n\n             where n.user_id = me.id and n.evidence = 'zk_proof' and n.is_real_human),\n    (select pg_catalog.max(n.age_floor) from public.verified_identity_nullifiers n\n      where n.user_id = me.id and n.evidence = 'kyc_document'),\n    (select n.universal_nullifier from public.verified_identity_nullifiers n\n      where n.user_id = me.id and n.evidence = 'kyc_document'\n      order by case n.anchor_kind when 'personal_number' then 0 when 'document' then 1 else 2 end, n.universal_nullifier\n      limit 1)\n  from me\n  where me.id is not null\n$function$"
@@ -35086,7 +35118,7 @@
       "schema": "public",
       "name": "rout_profile_qa_level",
       "args": "p_handle text",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_profile_qa_level(p_handle text)\n RETURNS qa_permission_level\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  select case when u.qa_permission_level <> 'public_unrestricted' then u.qa_permission_level\n              when u.date_of_birth > (current_date - interval '16 years') then 'verified_only'::public.qa_permission_level\n              else u.qa_permission_level end\n    from public.profiles p join public.users u on u.id = p.id\n   where lower(p.username) = lower(p_handle)\n   limit 1\n$function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_profile_qa_level(p_handle text)\n RETURNS qa_permission_level\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  select case when u.qa_permission_level <> 'public_unrestricted' then u.qa_permission_level\n              when u.age_floor is not null\n               and u.age_floor + pg_catalog.date_part('year',\n                     pg_catalog.age(current_date::timestamp, u.age_floor_at::timestamp))::integer < 16\n                then 'verified_only'::public.qa_permission_level\n              else u.qa_permission_level end\n    from public.profiles p join public.users u on u.id = p.id\n   where pg_catalog.lower(p.username) = pg_catalog.lower(p_handle)\n   limit 1\n$function$"
     },
     {
       "schema": "public",
@@ -35360,9 +35392,21 @@
     },
     {
       "schema": "public",
+      "name": "rout_record_my_age_floor",
+      "args": "p_age_floor smallint, p_parent_email text, p_token_hash text",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_record_my_age_floor(p_age_floor smallint, p_parent_email text, p_token_hash text)\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\ndeclare\n  v_user  uuid := public.rout_current_user_id();\n  v_minor boolean;\n  v_own   text;\nbegin\n  if v_user is null then return 'no_member'; end if;\n  if p_age_floor is null or p_age_floor not between 0 and 21 then return 'invalid_input'; end if;\n  v_minor := p_age_floor < 16;\n  if v_minor then\n    if p_parent_email is null or p_parent_email !~ '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$' or pg_catalog.length(p_parent_email) > 254\n       or p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$' then\n      return 'parent_required';\n    end if;\n    select u.email into v_own from public.users u where u.id = v_user;\n    if pg_catalog.lower(p_parent_email) = pg_catalog.lower(coalesce(v_own, '')) then return 'parent_email_same'; end if;\n  end if;\n  update public.users\n     set age_floor = p_age_floor,\n         age_floor_at = current_date,\n         parent_email = case when v_minor then pg_catalog.lower(p_parent_email) else parent_email end,\n         parent_consent_status = case when v_minor then 'pending'::public.parent_consent_status else parent_consent_status end\n   where id = v_user and age_floor is null;\n  if not found then return 'already_set'; end if;\n  if v_minor then\n    insert into public.parent_authorizations (user_id, token, action_type, expires_at)\n    values (v_user, p_token_hash, 'consent', pg_catalog.now() + interval '30 days');\n  end if;\n  return 'ok';\nend $function$"
+    },
+    {
+      "schema": "public",
       "name": "rout_record_signup_age",
       "args": "p_email text, p_dob date, p_parent_email text, p_token_hash text",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_record_signup_age(p_email text, p_dob date, p_parent_email text, p_token_hash text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\ndeclare v_id uuid; v_minor boolean;\nbegin\n  select id into v_id from public.users\n   where lower(email) = lower(p_email) and date_of_birth is null and created_at > now() - interval '15 minutes'\n   limit 1;\n  if v_id is null then return null; end if;\n  v_minor := p_dob > (current_date - interval '16 years');\n  update public.users\n     set date_of_birth = p_dob,\n         parent_email = case when v_minor then lower(p_parent_email) else null end,\n         parent_consent_status = case when v_minor then 'pending'::public.parent_consent_status else 'none' end\n   where id = v_id;\n  if v_minor and p_token_hash is not null then\n    insert into public.parent_authorizations (user_id, token, action_type, expires_at)\n    values (v_id, p_token_hash, 'consent', now() + interval '30 days');\n  end if;\n  return v_id;\nend $function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_record_signup_age(p_email text, p_dob date, p_parent_email text, p_token_hash text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\nbegin\n  if p_dob is null or p_dob > current_date then return null; end if;\n  return public.rout_record_signup_age_floor(p_email,\n    least(21, pg_catalog.date_part('year', pg_catalog.age(current_date::timestamp, p_dob::timestamp))::integer)::smallint,\n    p_parent_email, p_token_hash);\nend $function$"
+    },
+    {
+      "schema": "public",
+      "name": "rout_record_signup_age_floor",
+      "args": "p_email text, p_age_floor smallint, p_parent_email text, p_token_hash text",
+      "def": "CREATE OR REPLACE FUNCTION public.rout_record_signup_age_floor(p_email text, p_age_floor smallint, p_parent_email text, p_token_hash text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\ndeclare v_id uuid; v_minor boolean;\nbegin\n  if p_age_floor is null or p_age_floor not between 0 and 21 then return null; end if;\n  select u.id into v_id from public.users u\n   where pg_catalog.lower(u.email) = pg_catalog.lower(p_email) and u.age_floor is null\n     and u.created_at > pg_catalog.now() - interval '15 minutes'\n   limit 1;\n  if v_id is null then return null; end if;\n  v_minor := p_age_floor < 16;\n  update public.users\n     set age_floor = p_age_floor,\n         age_floor_at = current_date,\n         parent_email = case when v_minor then pg_catalog.lower(p_parent_email) else null end,\n         parent_consent_status = case when v_minor then 'pending'::public.parent_consent_status else 'none'::public.parent_consent_status end\n   where id = v_id;\n  if v_minor and p_token_hash is not null then\n    insert into public.parent_authorizations (user_id, token, action_type, expires_at)\n    values (v_id, p_token_hash, 'consent', pg_catalog.now() + interval '30 days');\n  end if;\n  return v_id;\nend $function$"
     },
     {
       "schema": "public",
@@ -35692,7 +35736,7 @@
       "schema": "public",
       "name": "rout_user_is_minor",
       "args": "p_user_id uuid",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_user_is_minor(p_user_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  select coalesce((select u.date_of_birth > (current_date - interval '16 years') from public.users u where u.id = p_user_id), false)\n$function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_user_is_minor(p_user_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\n  select coalesce((select u.age_floor + pg_catalog.date_part('year',\n                     pg_catalog.age(current_date::timestamp, u.age_floor_at::timestamp))::integer < 16\n                     from public.users u where u.id = p_user_id), false)\n$function$"
     },
     {
       "schema": "public",
@@ -35704,7 +35748,7 @@
       "schema": "public",
       "name": "rout_users_minor_sync",
       "args": "",
-      "def": "CREATE OR REPLACE FUNCTION public.rout_users_minor_sync()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\nbegin\n  new.is_minor := new.date_of_birth is not null and new.date_of_birth > (current_date - interval '16 years');\n  if new.date_of_birth is not null and new.date_of_birth > (current_date - interval '18 years')\n     and (tg_op = 'INSERT' or old.date_of_birth is distinct from new.date_of_birth) then\n    new.qa_permission_level := 'verified_only';\n  end if;\n  return new;\nend $function$"
+      "def": "CREATE OR REPLACE FUNCTION public.rout_users_minor_sync()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'pg_catalog', 'pg_temp'\nAS $function$\ndeclare v_age integer;\nbegin\n  v_age := case when new.age_floor is null then null\n                else least(21, new.age_floor + pg_catalog.date_part('year',\n                       pg_catalog.age(current_date::timestamp, new.age_floor_at::timestamp))::integer) end;\n  new.is_minor := v_age is not null and v_age < 16;\n  if v_age is not null and v_age < 18\n     and (tg_op = 'INSERT' or old.age_floor is distinct from new.age_floor) then\n    new.qa_permission_level := 'verified_only';\n  end if;\n  return new;\nend $function$"
     },
     {
       "schema": "public",

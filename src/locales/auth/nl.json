@@ -382,5 +382,13 @@
   "auth.scope.sybilProof": "Een anoniem bewijs dat je één echt mens bent, alleen geldig bij {{app}} — apps kunnen je onderling niet herkennen",
   "auth.scope.realHuman": "Alleen of je met een zero-knowledge-bewijs als echt mens bent bevestigd (ja/nee)",
   "auth.scope.ageGate": "Alleen of je minstens {{age}} jaar bent (ja/nee), nooit je geboortedatum",
-  "auth.scope.legalIdentity": "Of je wettelijke identiteit geverifieerd is, en je wettelijke naam als ROUT die bewaart — enkel als je dit aanvinkt"
+  "auth.scope.legalIdentity": "Of je wettelijke identiteit geverifieerd is, en je wettelijke naam als ROUT die bewaart — enkel als je dit aanvinkt",
+  "auth.age.title": "Hoe oud ben je?",
+  "auth.age.body": "Om je te beschermen zoals de wet het vraagt (AVG art. 8), hebben we je leeftijd nodig. Dit vragen we maar één keer.",
+  "auth.age.privacy": "We bewaren je geboortedatum niet. De server rekent alleen je leeftijd in hele jaren uit en vergeet de datum meteen.",
+  "auth.age.cta": "Bevestigen",
+  "auth.age.saving": "Bezig…",
+  "auth.age.saved": "Bedankt, je leeftijd is bewaard.",
+  "auth.age.savedMinor": "Bedankt. We hebben je ouder een e-mail gestuurd om toestemming te geven.",
+  "auth.age.failed": "Dat lukte niet. Probeer het zo opnieuw."
 }

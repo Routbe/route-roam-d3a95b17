@@ -382,5 +382,13 @@
   "auth.scope.sybilProof": "Une preuve anonyme que vous êtes un humain unique, valable uniquement chez {{app}} — les apps ne peuvent pas vous recouper",
   "auth.scope.realHuman": "Uniquement si une preuve à divulgation nulle vous a confirmé comme humain (oui/non)",
   "auth.scope.ageGate": "Uniquement si vous avez au moins {{age}} ans (oui/non), jamais votre date de naissance",
-  "auth.scope.legalIdentity": "Si votre identité légale est vérifiée, et votre nom légal si ROUT le conserve — seulement si vous cochez cette case"
+  "auth.scope.legalIdentity": "Si votre identité légale est vérifiée, et votre nom légal si ROUT le conserve — seulement si vous cochez cette case",
+  "auth.age.title": "Quel âge as-tu ?",
+  "auth.age.body": "Pour te protéger comme la loi l'exige (RGPD art. 8), nous avons besoin de ton âge. Nous ne le demandons qu'une fois.",
+  "auth.age.privacy": "Nous ne conservons pas ta date de naissance. Le serveur calcule seulement ton âge en années entières et oublie la date aussitôt.",
+  "auth.age.cta": "Confirmer",
+  "auth.age.saving": "En cours…",
+  "auth.age.saved": "Merci, ton âge est enregistré.",
+  "auth.age.savedMinor": "Merci. Nous avons envoyé un e-mail à ton parent pour demander son accord.",
+  "auth.age.failed": "Cela n'a pas fonctionné. Réessaie dans un instant."
 }

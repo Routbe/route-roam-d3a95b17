@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/router-compat";
 import { toast } from "sonner";
-import { ArrowLeft, Fingerprint, ChevronDown, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Fingerprint, ChevronDown, KeyRound, LifeBuoy, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Mode = "signin" | "signup" | "recovery" | "reset";
 /** Steps inside the sign-in card. */
-type SignInStep = "choose" | "link-sent" | "second";
+type SignInStep = "choose" | "methods" | "link-sent" | "second";
 /** OPAQUE password pages: their own cross-origin-isolated documents (full page load only). */
 const SECURE_PASSWORD_PATH = "/secure/password";
 type ApiResult = { data?: Record<string, unknown>; error?: { code?: string; message?: string } };
@@ -72,7 +72,7 @@ async function enrollPasskey(context: string, name: string) {
  * 2FA on finish with a second step (passkey, authenticator app, SMS or recovery
  * code). Sign-up creates the account together with its first passkey.
  */
-export default function AuthNeon({ initialMode = "signin", initialProviders = null }: { initialMode?: Mode; initialProviders?: AuthProvidersInfo | null }) {
+export default function AuthNeon({ initialMode = "signin", initialProviders = null, smartEntry: smartEntryProp = false }: { initialMode?: Mode; initialProviders?: AuthProvidersInfo | null; smartEntry?: boolean }) {
   const { t } = useTranslation();
   const { locale } = useI18n();
   const adminPortal = Boolean(usePortalFrame()) || isAdminMode();
@@ -98,6 +98,9 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
   const unavailable = readiness?.ready === false;
   // Password sign-in exists only once OPAQUE is live (db/0270), never in the admin portal's sign-up.
   const passwordAvailable = !unavailable && initialProviders?.password === true;
+  // Identifier-first card (/login): one e-mail field, then every way in plus an inline sign-up fold-out.
+  // There is deliberately no "does this address exist" lookup: that would let anyone test who is a member.
+  const smart = smartEntryProp && !adminPortal;
   const [embedded, setEmbedded] = useState(false);
   useEffect(() => {
     try { setEmbedded(window.self !== window.top); } catch { setEmbedded(true); }
@@ -345,6 +348,85 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
     </div>
   );
 
+  // Inline accordion; the password itself is typed only on the secure document,
+  // which needs a full page load because it is cross-origin isolated (COOP/COEP).
+  const passwordFold = (
+    <details className="group w-full rounded-lg border border-border">
+    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+      <Lock className="h-3.5 w-3.5" aria-hidden /> {t("auth.mf.usePassword")}
+      <ChevronDown className="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
+    </summary>
+    <div className="space-y-2 px-3 pb-3">
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.mf.passwordAccordionBody")}</p>
+      <Button asChild variant="outline" className="h-11 w-full gap-2 rounded-lg">
+        <a href={`${SECURE_PASSWORD_PATH}${EMAIL_REGEX.test(email.trim()) ? `#${new URLSearchParams({ email: email.trim().toLowerCase() }).toString()}` : ""}`}>
+          <Lock className="h-4 w-4" aria-hidden /> {t("auth.mf.passwordAccordionCta")}
+        </a>
+      </Button>
+    </div>
+                      </details>
+  );
+
+  /** Sign-up fields after the e-mail address; shared by the sign-up tab and the /login fold-out. */
+  const signupFields = (
+    <>
+    <div className="space-y-1">
+      <Label htmlFor="auth-signup-name" className="text-sm">{t("auth.pk.name")}</Label>
+      <Input id="auth-signup-name" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} className="h-10 rounded-lg" />
+    </div>
+    <div className="space-y-1.5">
+      <Label htmlFor="auth-signup-dob" className="text-sm">{t("auth.pk.dob")}</Label>
+      <input
+        id="auth-signup-dob"
+        type="date"
+        required
+        value={dob}
+        max={new Date().toISOString().slice(0, 10)}
+        min="1900-01-01"
+        onChange={(e) => setDob(e.target.value)}
+        className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+      />
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.age.privacy")}</p>
+    </div>
+    {minor && (
+      <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+        <Label htmlFor="auth-signup-parent" className="text-sm">{t("auth.pk.parentEmail")}</Label>
+        <input
+          id="auth-signup-parent"
+          type="email"
+          required
+          autoComplete="off"
+          value={parentEmail}
+          onChange={(e) => setParentEmail(e.target.value)}
+          className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+        />
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          {t("auth.pk.parentNote")} <Link to="/info/parental-consent" target="_blank" className="underline">{t("auth.pk.parentHow")}</Link>
+        </p>
+      </div>
+    )}
+    <div className="flex items-start gap-2.5 rounded-lg border border-border p-3">
+      <Checkbox id="auth-signup-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} required aria-required="true" className="mt-0.5" />
+      <label htmlFor="auth-signup-consent" className="text-xs leading-relaxed text-muted-foreground">
+        {t("auth.signupConsent.before")}{" "}
+        <Link to="/terms" className="font-medium text-foreground underline underline-offset-2">{t("auth.signupConsent.terms")}</Link>{" "}
+        {t("auth.signupConsent.and")}{" "}
+        <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">{t("auth.signupConsent.privacy")}</Link>{" "}
+        {t("auth.signupConsent.after")}
+      </label>
+    </div>
+    <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.pk.signupNote")}</p>
+    <Button type="submit" className="h-11 w-full gap-2 rounded-lg font-medium" disabled={!canSubmitSignUp({ consented, busy: loading, unavailable, emailError: !!emailError })}>
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {t("auth.pk.signupCta")}
+    </Button>
+    {passwordAvailable && (
+      <Button type="button" variant="ghost" className="h-auto min-h-11 w-full gap-2 whitespace-normal text-sm" disabled={!canSubmitSignUp({ consented, busy: loading, unavailable, emailError: !!emailError })} onClick={() => void signUp(null, true)}>
+        <Lock className="h-4 w-4 shrink-0" aria-hidden /> {t("auth.pw.signupWithPassword")}
+      </Button>
+    )}
+    </>
+  );
+
   const linkButton = (target: Mode, label: string, Icon: typeof KeyRound) => (
     <button
       type="button"
@@ -376,17 +458,17 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
           </div>
         )}
 
-        <div className={`w-full rounded-2xl border border-border bg-card p-5 sm:p-7 ${!adminPortal && (mode === "signin" || mode === "signup") && step !== "second" ? "max-w-md md:max-w-4xl" : "max-w-md"}`}>
+        <div className={`w-full rounded-2xl border border-border bg-card p-5 sm:p-7 ${!adminPortal && !smart && (mode === "signin" || mode === "signup") && step !== "second" ? "max-w-md md:max-w-4xl" : "max-w-md"}`}>
           <div className="mb-4">
             <h1 className="mb-1 font-display text-2xl text-foreground">
               {adminPortal ? t("auth.admin") : mode === "signup" ? t("auth.ui.signup.cta") : mode === "recovery" ? t("auth.pk.recoveryTitle") : mode === "reset" ? t("auth.mf.resetTitle") : t("auth.ui.title")}
             </h1>
             {mode !== "reset" && step !== "second" && (
-              <p className="text-sm text-muted-foreground">{mode === "recovery" ? t("auth.pk.recoverySubtitle") : mode === "signup" ? t("auth.pk.signupSubtitle") : t("auth.pk.subtitle")}</p>
+              <p className="text-sm text-muted-foreground">{mode === "recovery" ? t("auth.pk.recoverySubtitle") : mode === "signup" ? t("auth.pk.signupSubtitle") : smart ? t("auth.smart.subtitle") : t("auth.pk.subtitle")}</p>
             )}
           </div>
 
-          {!adminPortal && (mode === "signin" || mode === "signup") && step !== "second" && (
+          {!adminPortal && !smart && (mode === "signin" || mode === "signup") && step !== "second" && (
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1" role="tablist">
               <button type="button" role="tab" aria-selected={mode === "signin"} onClick={() => { setMode("signin"); setStep("choose"); }} className={`h-10 rounded-lg text-sm font-medium transition ${mode === "signin" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{t("auth.ui.title")}</button>
               <button type="button" role="tab" aria-selected={mode === "signup"} onClick={() => { setMode("signup"); setStep("choose"); }} className={`h-10 rounded-lg text-sm font-medium transition ${mode === "signup" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{t("auth.ui.signup.cta")}</button>
@@ -410,7 +492,56 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
 
           {mode === "signin" && step !== "second" && (
             <div className="space-y-3">
-              {step === "choose" && (
+              {smart && step === "choose" && (
+                <div className="space-y-4" data-testid="auth-smart-entry">
+                  <PublicProviderSignIn configured={configuredProviders} readiness={readiness} disabled={loading} />
+                  <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground" aria-hidden>
+                    <span className="h-px flex-1 bg-border" /> {t("auth.mf.orEmail")} <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <form onSubmit={(e) => { e.preventDefault(); if (emailAccepted()) setStep("methods"); }} className="space-y-3">
+                    {emailField}
+                    <Button type="submit" disabled={loading || unavailable || !!emailError} className="cta-glow h-11 w-full gap-2 rounded-lg">
+                      {t("auth.smart.continue")} <ArrowRight className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </form>
+                  <p className="text-center text-[11px] text-muted-foreground">{t("auth.smart.autofillHint")}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <button type="button" onClick={() => void passkeyLogin()} disabled={loading || unavailable} className="tap-wide inline-flex items-center gap-1.5 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">
+                      <Fingerprint className="h-3.5 w-3.5" aria-hidden /> {t("auth.passkey")}
+                    </button>
+                    {linkButton("recovery", t("auth.mf.recoveryLink"), LifeBuoy)}
+                  </div>
+                </div>
+              )}
+
+              {smart && step === "methods" && (
+                <div className="space-y-3" data-testid="auth-smart-methods">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                    <span className="min-w-0 truncate text-sm text-foreground">{email.trim().toLowerCase()}</span>
+                    <button type="button" onClick={() => setStep("choose")} className="tap-wide shrink-0 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">{t("auth.smart.change")}</button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{t("auth.smart.methods")}</p>
+                  <Button type="button" onClick={() => void passkeyLogin()} disabled={loading || unavailable} className="cta-glow h-auto min-h-12 w-full gap-2 whitespace-normal px-4 py-3 text-sm">
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4 shrink-0" />} {t("auth.passkey")}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => void sendLink()} disabled={loading || unavailable} className="h-11 w-full gap-2 rounded-lg">
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />} {t("auth.mf.sendLink")}
+                  </Button>
+                  {passwordAvailable && passwordFold}
+                  <details className="group rounded-lg border border-border" onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) setMode("signin"); }}>
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+                      <KeyRound className="h-4 w-4" aria-hidden /> {t("auth.smart.newTitle")}
+                      <ChevronDown className="ml-auto h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+                    </summary>
+                    <form onSubmit={signUp} className="space-y-3.5 px-3 pb-3">
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.smart.newBody")}</p>
+                      {signupFields}
+                    </form>
+                  </details>
+                </div>
+              )}
+
+              {!smart && step === "choose" && (
                 <div className={adminPortal ? "space-y-3" : "flex flex-col gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-8"}>
                   {!adminPortal && <>
                     <div className="md:order-3"><PublicProviderSignIn configured={configuredProviders} readiness={readiness} disabled={loading} /></div>
@@ -433,24 +564,7 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
                       </Button>
                   </form>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    {passwordAvailable && (
-                      // Inline accordion; the password itself is typed only on the secure document,
-                      // which needs a full page load because it is cross-origin isolated (COOP/COEP).
-                      <details className="group w-full rounded-lg border border-border">
-                        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-xs text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
-                          <Lock className="h-3.5 w-3.5" aria-hidden /> {t("auth.mf.usePassword")}
-                          <ChevronDown className="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" aria-hidden />
-                        </summary>
-                        <div className="space-y-2 px-3 pb-3">
-                          <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.mf.passwordAccordionBody")}</p>
-                          <Button asChild variant="outline" className="h-11 w-full gap-2 rounded-lg">
-                            <a href={`${SECURE_PASSWORD_PATH}${EMAIL_REGEX.test(email.trim()) ? `#${new URLSearchParams({ email: email.trim().toLowerCase() }).toString()}` : ""}`}>
-                              <Lock className="h-4 w-4" aria-hidden /> {t("auth.mf.passwordAccordionCta")}
-                            </a>
-                          </Button>
-                        </div>
-                      </details>
-                    )}
+                    {passwordAvailable && passwordFold}
                   </div>
                   {adminPortal && <p className="text-[11px] text-muted-foreground">{t("auth.mf.adminNote")}</p>}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
@@ -499,59 +613,7 @@ export default function AuthNeon({ initialMode = "signin", initialProviders = nu
           {mode === "signup" && !adminPortal && (
             <form onSubmit={signUp} className="mx-auto max-w-md space-y-3.5">
               {emailField}
-              <div className="space-y-1">
-                <Label htmlFor="auth-signup-name" className="text-sm">{t("auth.pk.name")}</Label>
-                <Input id="auth-signup-name" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} className="h-10 rounded-lg" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="auth-signup-dob" className="text-sm">{t("auth.pk.dob")}</Label>
-                <input
-                  id="auth-signup-dob"
-                  type="date"
-                  required
-                  value={dob}
-                  max={new Date().toISOString().slice(0, 10)}
-                  min="1900-01-01"
-                  onChange={(e) => setDob(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
-                />
-              </div>
-              {minor && (
-                <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
-                  <Label htmlFor="auth-signup-parent" className="text-sm">{t("auth.pk.parentEmail")}</Label>
-                  <input
-                    id="auth-signup-parent"
-                    type="email"
-                    required
-                    autoComplete="off"
-                    value={parentEmail}
-                    onChange={(e) => setParentEmail(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
-                  />
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {t("auth.pk.parentNote")} <Link to="/info/parental-consent" target="_blank" className="underline">{t("auth.pk.parentHow")}</Link>
-                  </p>
-                </div>
-              )}
-              <div className="flex items-start gap-2.5 rounded-lg border border-border p-3">
-                <Checkbox id="auth-signup-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} required aria-required="true" className="mt-0.5" />
-                <label htmlFor="auth-signup-consent" className="text-xs leading-relaxed text-muted-foreground">
-                  {t("auth.signupConsent.before")}{" "}
-                  <Link to="/terms" className="font-medium text-foreground underline underline-offset-2">{t("auth.signupConsent.terms")}</Link>{" "}
-                  {t("auth.signupConsent.and")}{" "}
-                  <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">{t("auth.signupConsent.privacy")}</Link>{" "}
-                  {t("auth.signupConsent.after")}
-                </label>
-              </div>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">{t("auth.pk.signupNote")}</p>
-              <Button type="submit" className="h-11 w-full gap-2 rounded-lg font-medium" disabled={!canSubmitSignUp({ consented, busy: loading, unavailable, emailError: !!emailError })}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />} {t("auth.pk.signupCta")}
-              </Button>
-              {passwordAvailable && (
-                <Button type="button" variant="ghost" className="h-auto min-h-11 w-full gap-2 whitespace-normal text-sm" disabled={!canSubmitSignUp({ consented, busy: loading, unavailable, emailError: !!emailError })} onClick={() => void signUp(null, true)}>
-                  <Lock className="h-4 w-4 shrink-0" aria-hidden /> {t("auth.pw.signupWithPassword")}
-                </Button>
-              )}
+              {signupFields}
               {linkButton("signin", t("auth.pk.haveAccount"), Fingerprint)}
             </form>
           )}

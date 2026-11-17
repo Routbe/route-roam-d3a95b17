@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { BrandLoader } from "@/components/BrandLoader";
 import { SunsetOverlay } from "@/components/SunsetOverlay";
+import { AgeFloorSheet } from "@/components/auth/AgeFloorSheet";
 
 export const Route = createFileRoute("/_authenticated")({
   head: () => ({ meta: [{ title: 'ROUT — Member area' }, { name: "description", content: 'Your ROUT account and workspace.' }, { property: "og:title", content: 'ROUT — Member area' }, { property: "og:description", content: 'Your ROUT account and workspace.' }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), 
@@ -42,6 +43,7 @@ function AuthenticatedLayout() {
     <>
       <Outlet />
       <SunsetOverlay />
+      <AgeFloorSheet />
     </>
   );
 }

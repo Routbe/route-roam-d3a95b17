@@ -30,7 +30,7 @@ describe("passkey-only account creation", () => {
   it("creates the account from a verified sign-up ticket inside the passkey scope", async () => {
     const ticket = await signSignupTicket(
       SECRET,
-      { email: "new@example.com", name: "New", dob: "1990-01-01", parentEmail: null, consent: "test" } as never,
+      { email: "new@example.com", name: "New", ageFloor: 21, parentEmail: null, consent: "test" } as never,
       Math.floor(Date.now() / 1000),
     );
     let scopedDuringCreate = false;

@@ -2,7 +2,7 @@
 import { sql } from "@/lib/neon";
 import { SITE_ORIGIN } from "@/lib/site";
 import { escapeMailParam } from "@/lib/mail-param-escape";
-import { isMinorDob, isQaLevel, PARENT_PAYMENT_HOURS, QA_LEVEL_LABELS, type QaLevel } from "./minor-safety";
+import { isQaLevel, MINOR_AGE, PARENT_PAYMENT_HOURS, QA_LEVEL_LABELS, type QaLevel } from "./minor-safety";
 
 type Row = Record<string, unknown>;
 
@@ -35,13 +35,27 @@ const shell = (body: string) => `<!doctype html><html lang="nl"><body style="mar
 const button = (href: string, label: string) =>
   `<p><a href="${href}" style="display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">${label}</a></p>`;
 
-/** Called right after a successful local sign-up. Records the age and mails the parent of a minor. */
-export async function recordSignupAge(email: string, dob: string, parentEmail: string | null): Promise<{ minor: boolean; mailed: boolean }> {
-  const minor = isMinorDob(dob);
+/**
+ * Called right after a successful local sign-up with the whole-year age floor (never the date).
+ * From db/0291 only the floor is stored; before it, the legacy function gets the youngest date
+ * consistent with the floor, which reveals nothing beyond the floor and fails closed.
+ */
+export async function recordSignupAge(email: string, ageFloor: number, parentEmail: string | null): Promise<{ minor: boolean; mailed: boolean }> {
+  const { isAgeFloor, legacyDateForFloor } = await import("@/lib/age/age-floor");
+  if (!isAgeFloor(ageFloor)) return { minor: false, mailed: false };
+  const minor = ageFloor < MINOR_AGE;
   const token = minor ? newParentToken() : null;
   const hash = token ? await hashParentToken(token) : null;
-  const rows = (await sql`select public.rout_record_signup_age(${email}, ${dob}::date, ${minor ? parentEmail : null}, ${hash}) as id`) as Row[];
+  const { hasSchemaFeature } = await import("@/lib/schema-features.server");
+  const rows = (await hasSchemaFeature("0291"))
+    ? ((await sql`select public.rout_record_signup_age_floor(${email}, ${ageFloor}::smallint, ${minor ? parentEmail : null}, ${hash}) as id`) as Row[])
+    : ((await sql`select public.rout_record_signup_age(${email}, ${legacyDateForFloor(ageFloor)}::date, ${minor ? parentEmail : null}, ${hash}) as id`) as Row[]);
   if (!rows[0]?.["id"] || !minor || !token || !parentEmail) return { minor, mailed: false };
+  return { minor, mailed: await mailParentConsent(email, parentEmail, token) };
+}
+
+/** The consent mail to the parent of a minor (sign-up and the age sheet). */
+export async function mailParentConsent(email: string, parentEmail: string, token: string): Promise<boolean> {
   const link = `${SITE_ORIGIN}/parent/control/${token}`;
   const child = escapeMailParam(email);
   const html = shell(`
@@ -52,13 +66,12 @@ ${button(link, "Toestemming geven en instellingen beheren")}
 <ul style="padding-left:18px;line-height:1.6">
 <li>Anonieme berichten van bezoekers zonder account staan standaard <strong>uit</strong>. Alleen geverifieerde ROUT-accounts kunnen berichten sturen.</li>
 <li>Elke betaling (upgrade, domein) moet eerst door jou goedgekeurd en betaald worden via een aparte link die 48 uur geldig is.</li>
-<li>We bewaren de geboortedatum alleen om deze beschermingen toe te passen en tonen ze nooit publiek.</li>
+<li>We bewaren geen geboortedatum: enkel de leeftijd in hele jaren, om deze beschermingen toe te passen. Die tonen we nooit publiek.</li>
 <li>Met de knop hierboven beheer je de berichtinstellingen, ook later, zonder zelf een ROUT-account te hebben. Bewaar deze mail.</li>
 <li>Je kunt altijd vragen om het account en alle gegevens te verwijderen via rout.be/contact.</li>
 </ul>
 <p style="font-size:13px;color:#555">Heb je hier niets mee te maken? Dan hoef je niets te doen.</p>`);
-  const mailed = await send(parentEmail, "Toestemming gevraagd voor een ROUT-account", html, ["parental-consent"]);
-  return { minor, mailed };
+  return send(parentEmail, "Toestemming gevraagd voor een ROUT-account", html, ["parental-consent"]);
 }
 
 export type ParentView = {
@@ -111,6 +124,47 @@ export async function setQaLevel(token: string, level: QaLevel): Promise<boolean
   if (!isParentTokenShape(token)) return false;
   const rows = (await sql`select public.rout_parent_set_qa_level(${await hashParentToken(token)}, ${level}::public.qa_permission_level) as ok`) as Row[];
   return rows[0]?.["ok"] === true;
+}
+
+/**
+ * Whether the signed-in member still has to give their age (db/0291): true only when the database
+ * knows neither a self-declared floor nor a KYC floor. Before 0291 nothing is asked (fails open to
+ * "no sheet"; the older sign-up path still records its age).
+ */
+export async function myAgeFloorMissing(userId: string): Promise<boolean> {
+  const { hasSchemaFeature } = await import("@/lib/schema-features.server");
+  if (!(await hasSchemaFeature("0291"))) return false;
+  const { withDbContext } = await import("@/lib/neon");
+  const rows = await withDbContext({ userId, workspaceId: null }, async () =>
+    (await sql`select public.rout_my_age_floor() as f`) as Row[]);
+  return rows[0]?.["f"] === null || rows[0]?.["f"] === undefined;
+}
+
+export type MyAgeOutcome = "ok" | "already_set" | "dob_invalid" | "parent_required" | "parent_email_same" | "unavailable";
+
+/**
+ * The post-sign-in age sheet. The date arrives only in this request and is turned into a whole-year
+ * floor by ageFloorFromBirthDate (which wipes its byte copy); only the floor reaches Neon.
+ */
+export async function recordMyAge(userId: string, ownEmail: string, ageFloor: number | null, parentEmail: string | null): Promise<MyAgeOutcome> {
+  const { isAgeFloor } = await import("@/lib/age/age-floor");
+  if (!isAgeFloor(ageFloor)) return "dob_invalid";
+  const { hasSchemaFeature } = await import("@/lib/schema-features.server");
+  if (!(await hasSchemaFeature("0291"))) return "unavailable";
+  const minor = ageFloor < MINOR_AGE;
+  const parent = minor ? (parentEmail ?? "").trim().toLowerCase() : null;
+  const token = minor ? newParentToken() : null;
+  const hash = token ? await hashParentToken(token) : null;
+  const { withDbContext } = await import("@/lib/neon");
+  const rows = await withDbContext({ userId, workspaceId: null }, async () =>
+    (await sql`select public.rout_record_my_age_floor(${ageFloor}::smallint, ${parent}, ${hash}) as r`) as Row[]);
+  const r = String(rows[0]?.["r"] ?? "unavailable");
+  if (r === "ok") {
+    if (minor && token && parent) await mailParentConsent(ownEmail, parent, token);
+    return "ok";
+  }
+  if (r === "already_set" || r === "parent_required" || r === "parent_email_same") return r;
+  return r === "invalid_input" ? "dob_invalid" : "unavailable";
 }
 
 export async function isMinorUser(userId: string): Promise<boolean> {

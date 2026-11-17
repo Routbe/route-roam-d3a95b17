@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * db-pending/0291 (zero raw date of birth) on an offline replay of db/ up to 0290, applied with the
+ * db/0291 (zero raw date of birth) on an offline replay of db/ up to 0290, applied with the
  * definer guard in the same transaction. Never touches Neon. Proves:
  *   - existing birth dates become a whole-year age floor and are erased; the column stays empty;
  *   - minor and Q&A protections read the floor and age with the calendar (fail closed);
@@ -13,7 +13,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { applyPending, replayDb, ROOT } from "../../scripts/formal-rls/replay";
+import { applyReleased, replayDb, ROOT } from "../../scripts/formal-rls/replay";
 
 const MINOR = "00000000-0000-4000-8000-000000002911";
 const ADULT = "00000000-0000-4000-8000-000000002912";
@@ -23,14 +23,14 @@ const HASH = "a".repeat(64);
 
 let db: PGlite;
 beforeAll(async () => {
-  db = await replayDb((f) => f <= "0290_identity_os_sign.sql");
+  db = await replayDb((f) => f < "0291");
   await db.exec(`
     insert into public.users (id, email, date_of_birth) values
       ('${MINOR}', 'minor@example.test', current_date - interval '15 years' + interval '10 days'),
       ('${ADULT}', 'adult@example.test', date '1990-05-05');
     insert into public.users (id, email) values ('${SHEET}', 'sheet@example.test'), ('${NOAGE}', 'noage@example.test');
   `);
-  await applyPending(db, "0291_age_floor_zero_dob.sql");
+  await applyReleased(db, "0291_age_floor_zero_dob.sql");
 }, 600_000);
 afterAll(async () => { await db?.close(); });
 

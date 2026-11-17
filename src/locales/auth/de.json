@@ -382,5 +382,13 @@
   "auth.scope.sybilProof": "Ein anonymer Nachweis, dass du ein echter Mensch bist, nur gültig bei {{app}} — Apps können dich untereinander nicht wiedererkennen",
   "auth.scope.realHuman": "Nur ob ein Zero-Knowledge-Nachweis dich als echten Menschen bestätigt hat (ja/nein)",
   "auth.scope.ageGate": "Nur ob du mindestens {{age}} Jahre alt bist (ja/nein), nie dein Geburtsdatum",
-  "auth.scope.legalIdentity": "Ob deine rechtliche Identität geprüft ist, und dein rechtlicher Name, falls ROUT ihn speichert — nur wenn du das ankreuzt"
+  "auth.scope.legalIdentity": "Ob deine rechtliche Identität geprüft ist, und dein rechtlicher Name, falls ROUT ihn speichert — nur wenn du das ankreuzt",
+  "auth.age.title": "Wie alt bist du?",
+  "auth.age.body": "Um dich zu schützen, wie es das Gesetz verlangt (DSGVO Art. 8), brauchen wir dein Alter. Wir fragen nur einmal.",
+  "auth.age.privacy": "Wir speichern dein Geburtsdatum nicht. Der Server berechnet nur dein Alter in ganzen Jahren und vergisst das Datum sofort.",
+  "auth.age.cta": "Bestätigen",
+  "auth.age.saving": "Wird gespeichert…",
+  "auth.age.saved": "Danke, dein Alter wurde gespeichert.",
+  "auth.age.savedMinor": "Danke. Wir haben deinem Elternteil eine E-Mail für die Zustimmung geschickt.",
+  "auth.age.failed": "Das hat nicht geklappt. Bitte versuche es gleich noch einmal."
 }
