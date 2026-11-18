@@ -2196,5 +2196,9 @@
   "sign.result.not_open": "Dieses Dokument wurde bereits unterschrieben.",
   "sign.result.expired": "Diese Anfrage ist abgelaufen.",
   "sign.result.source_changed": "Das Dokument wurde seit dem Öffnen geändert. Lade die Seite neu.",
-  "sign.result.invalid_input": "Diese Unterschrift konnte nicht gespeichert werden."
+  "sign.result.invalid_input": "Diese Unterschrift konnte nicht gespeichert werden.",
+  "badges.officialMemberTitle": "Offiziell verifiziertes Mitglied",
+  "badges.officialMemberBody": "Offiziell verifiziertes Mitglied. Identität und Kontostatus wurden erfolgreich über ROUT validiert.",
+  "badges.linkedTitle": "Verifizierter Mensch",
+  "badges.linkedExplanation": "Dieses private Profil gehört zu einem verifizierten ROUT-Konto: einer bestätigten, echten Person. Der Name bleibt privat."
 }

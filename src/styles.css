@@ -237,6 +237,9 @@ textarea[data-tour^="cc-"] {
   --identity-verified: #1d9bf0;
   /* Green Real Human shield: zero-knowledge humanity proofs only. */
   --identity-human: #16a34a;
+  /* White linked mark on a private alias: a verified human, no name. */
+  --identity-linked: #ffffff;
+  --identity-linked-edge: rgb(0 0 0 / 0.55);
   /* Gold Supporter crown: support for ROUT, never identity. */
   --identity-supporter: #b8860b;
   --sketch-ink: hsl(var(--foreground) / 0.45);
@@ -371,6 +374,7 @@ textarea[data-tour^="cc-"] {
   --color-shield-hardware-foreground: hsl(var(--shield-hardware-foreground));
   --color-identity-verified: var(--identity-verified);
   --color-identity-human: var(--identity-human);
+  --color-identity-linked: var(--identity-linked);
   --color-identity-supporter: var(--identity-supporter);
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
