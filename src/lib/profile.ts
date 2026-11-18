@@ -248,6 +248,8 @@ export interface ProfileRecord {
   verified?: boolean;
   /** Aliasprofiel (`/u/…`) van een lid met een geverifieerd rootprofiel. */
   human_linked?: boolean;
+  /** Aliasprofiel: de eigenaar is een geverifieerde mens (wit vinkje, zonder naam). */
+  verified_linked?: boolean;
   /** Tier 2: legal name verified from a government document (or legacy paid verification). */
   legal_identity_verified?: boolean;
   /** Tier 1: proven unique human (pseudonym-safe). */
