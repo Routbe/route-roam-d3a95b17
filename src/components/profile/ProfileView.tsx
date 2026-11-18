@@ -305,7 +305,10 @@ export function ProfileView({
       ? "domain"
       : profile.is_influencer
         ? "influencer"
-        : prefs.badgeType === "influencer"
+        : // Geverifieerd hoofdprofiel: het blauwe vinkje is verplicht en niet te vervangen.
+          kycAttested
+          ? "verified"
+          : prefs.badgeType === "influencer"
           ? "verified"
           : prefs.badgeType === "domain" && !claimedDomain
             ? "verified"
