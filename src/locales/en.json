@@ -2196,5 +2196,9 @@
   "sign.result.not_open": "This document has already been signed.",
   "sign.result.expired": "This request has expired.",
   "sign.result.source_changed": "The document changed since you opened it. Reload the page.",
-  "sign.result.invalid_input": "This signature could not be recorded."
+  "sign.result.invalid_input": "This signature could not be recorded.",
+  "badges.officialMemberTitle": "Officially verified member",
+  "badges.officialMemberBody": "Officially verified member. Identity and account status were successfully validated through ROUT.",
+  "badges.linkedTitle": "Verified human",
+  "badges.linkedExplanation": "This private profile belongs to a verified ROUT account: a confirmed, real person. The name stays private."
 }

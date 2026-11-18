@@ -39,7 +39,8 @@ export function ProfileBadge({
   textColor,
   mutedColor,
 }: {
-  type: BadgeType;
+  /** `linked`: wit vinkje op een privé-alias — geverifieerde mens, zonder naam of land. */
+  type: BadgeType | "linked";
   verifiedAt?: string | null;
   legalName?: string | null;
   /** Landcode bij het blauwe vinkje, bv. "BE". */
@@ -59,28 +60,35 @@ export function ProfileBadge({
   if (type === "none") return null;
 
   const on = monthYear(verifiedAt, locale || "nl");
-  const iconSize = size === "md" ? "h-6 w-6" : "h-5 w-5";
+  // Micro-badge in de kop: 18 px, met een tikzone van 44 px (tap-wide).
+  const iconSize = size === "md" ? "h-6 w-6" : "h-[1.125rem] w-[1.125rem]";
 
   const title =
-    type === "human"
+    type === "linked"
+      ? t("badges.linkedTitle")
+      : type === "human"
       ? t("badges.humanTitle")
       : type === "domain"
         ? t("badges.businessTitle", { domain: domain ? ` — ${domain}` : "" })
         : type === "influencer"
           ? t("badges.creatorTitle")
-          : t("profile.verified_badge_title");
+          : t("badges.officialMemberTitle");
 
   const body =
-    type === "human"
+    type === "linked"
+      ? t("badges.linkedExplanation")
+      : type === "human"
       ? t("badges.humanExplanation")
       : type === "domain"
         ? t("badges.businessExplanation")
         : type === "influencer"
           ? t("badges.creatorExplanation")
-          : t("badges.verifiedExplanation");
+          : t("badges.officialMemberBody");
 
   const icon = (extra = "") =>
-    type === "domain" ? (
+    type === "linked" ? (
+      <VerifiedIdentityIcon className={`${iconSize} !text-identity-linked drop-shadow-[0_0_1px_var(--identity-linked-edge)] ${extra}`} />
+    ) : type === "domain" ? (
       <DomainBadgeIcon className={`${iconSize} ${extra}`} />
     ) : type === "human" ? (
       <ShieldCheck className={`${iconSize} text-identity-human ${extra}`} aria-hidden />
@@ -107,7 +115,7 @@ export function ProfileBadge({
           type="button"
           aria-label={title}
           title={title}
-          className="inline-flex items-center transition-opacity hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
+          className="tap-wide inline-flex items-center transition-opacity hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
         >
           <BadgeBackdrop variant={backdrop} color={backdropColor} size={size}>
             {icon()}

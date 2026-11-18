@@ -2196,5 +2196,9 @@
   "sign.result.not_open": "Ce document a déjà été signé.",
   "sign.result.expired": "Cette demande a expiré.",
   "sign.result.source_changed": "Le document a changé depuis son ouverture. Rechargez la page.",
-  "sign.result.invalid_input": "Cette signature n’a pas pu être enregistrée."
+  "sign.result.invalid_input": "Cette signature n’a pas pu être enregistrée.",
+  "badges.officialMemberTitle": "Membre officiellement vérifié",
+  "badges.officialMemberBody": "Membre officiellement vérifié. L'identité et le statut du compte ont été validés avec succès via ROUT.",
+  "badges.linkedTitle": "Humain vérifié",
+  "badges.linkedExplanation": "Ce profil privé appartient à un compte ROUT vérifié : une personne réelle confirmée. Le nom reste privé."
 }

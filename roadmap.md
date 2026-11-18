@@ -444,3 +444,11 @@
 - [x] /login unified card with social, passkey and password fold-out
 - [ ] Post-OAuth age modal (needs decision: no DOB storage)
 - [ ] PAdES-LTA via CSC (waits for QTSP choice)
+
+## Opdracht eigenaar 2026-11-18
+- [ ] Blauw vinkje altijd naast naam op geverifieerd hoofdprofiel (@jdelplanche mist het)
+- [ ] Popover-kaart bij blauw vinkje: naam · land, "Geverifieerd in <maand jaar>", validatietekst; alias alleen met show_verification_on_alias
+- [ ] Wit vinkje op privé-alias (echt mens met geverifieerd profiel)
+- [ ] Studio: wisselen naar donatiepagina + "Voorbeeld bekijken" werkt niet; pagina's niet correct aangemaakt
+- [ ] Smart Entry aanmeldkaart op /login afmaken (vertalingen, koppelen, telefooncontrole)
+- [ ] Volledige testreeks + typecheck, HANDOVER/roadmap bijwerken met 0291

@@ -202,6 +202,9 @@ export async function readPublicAliasProfile(rawHandle: string) {
     // Only a zero-knowledge humanity proof unlocks the green "Real Human" shield; KYC, W Identity
     // or a payment never does (owner directive 2026-11-17).
     human_linked: ownerIdentity.realHuman,
+    // White linked mark: the owner holds the blue mark (KYC or legacy admin review) or a ZK
+    // humanity proof. It proves a verified human without revealing the legal name.
+    verified_linked: ownerIdentity.diditVerified || ownerIdentity.realHuman,
     verified_at: (row["owner_verified_at"] as string | null) ?? null,
     verified_legal_name: null,
     is_early_believer: false,

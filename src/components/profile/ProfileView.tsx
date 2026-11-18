@@ -282,7 +282,7 @@ export function ProfileView({
     space: free ? "alias" : "root",
     kycAttested,
     zkHuman,
-    humanLinked: Boolean(profile.human_linked),
+    humanLinked: Boolean(profile.human_linked || profile.verified_linked),
     badgeVisible: prefs.badgeVisible,
     badgeType: prefs.badgeType,
     isBusiness: Boolean(profile.is_business),
@@ -296,15 +296,19 @@ export function ProfileView({
    * vinkje (identiteit + land) of het privacy-schild (enkel "echte mens")
    * tonen, of de zwarte domeinbadge wanneer een domein geclaimd is — of niets.
    */
-  const badgeType: BadgeType = free
-    ? "human"
+  const badgeType: BadgeType | "linked" = free
+    ? // Privé-alias: het witte vinkje (geverifieerde mens), nooit naam of land.
+      "linked"
     : // Een goedgekeurd bedrijf draagt altijd de zwarte badge, een goedgekeurde
       // influencer de roze; beide zijn toegekend en dus niet vrij te kiezen.
       profile.is_business
       ? "domain"
       : profile.is_influencer
         ? "influencer"
-        : prefs.badgeType === "influencer"
+        : // Geverifieerd hoofdprofiel: het blauwe vinkje is verplicht en niet te vervangen.
+          kycAttested
+          ? "verified"
+          : prefs.badgeType === "influencer"
           ? "verified"
           : prefs.badgeType === "domain" && !claimedDomain
             ? "verified"
@@ -534,7 +538,7 @@ export function ProfileView({
             <ProfileBadge
               type={badgeType}
               legalName={
-                free ? null : (profile.verified_legal_name ?? profile.display_name ?? null)
+                free ? null : (profile.verified_legal_name ?? null)
               }
               country={free ? null : (profile.country_code ?? null)}
               domain={claimedDomain}

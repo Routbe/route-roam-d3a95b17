@@ -2196,5 +2196,9 @@
   "sign.result.not_open": "Dit document is al ondertekend.",
   "sign.result.expired": "Dit verzoek is verlopen.",
   "sign.result.source_changed": "Het document is gewijzigd sinds je het opende. Laad de pagina opnieuw.",
-  "sign.result.invalid_input": "Deze handtekening kon niet worden vastgelegd."
+  "sign.result.invalid_input": "Deze handtekening kon niet worden vastgelegd.",
+  "badges.officialMemberTitle": "Officieel geverifieerd lid",
+  "badges.officialMemberBody": "Officieel geverifieerd lid. Identiteit en accountstatus zijn succesvol gevalideerd via ROUT.",
+  "badges.linkedTitle": "Geverifieerde mens",
+  "badges.linkedExplanation": "Dit privéprofiel hoort bij een geverifieerd ROUT-account: een bevestigde, echte mens. De naam blijft privé."
 }
